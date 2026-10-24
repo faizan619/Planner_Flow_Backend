@@ -3,6 +3,7 @@ import { rateLimit } from "@/server/rateLimit";
 import { sendCode } from "@/server/auth/codes";
 import { findUserByEmail } from "@/server/users";
 import { EmailOnly } from "@/server/validation";
+import { logEvent, requestMeta } from "@/server/logs";
 
 // POST /api/v1/auth/forgot-password — { email }
 // Emails a reset code. Always answers the same way, so it doesn't reveal
@@ -14,5 +15,12 @@ export const POST = route(async (request) => {
 
   const user = await findUserByEmail(email);
   if (user && user.status === "active") await sendCode(user, "reset");
+  logEvent(requestMeta(request), {
+    category: "security",
+    event: "password_reset_requested",
+    userId: user?.id ?? null,
+    email,
+    details: { accountFound: Boolean(user) },
+  });
   return ok({ message: "If an account exists for that email, a reset code is on its way." });
 });

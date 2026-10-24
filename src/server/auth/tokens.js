@@ -63,8 +63,10 @@ export async function issueTokens(user, userAgent) {
   return tokenPair(user, token);
 }
 
-// Exchanges a refresh token for a new pair. Returns { user, tokens } or null.
-export async function rotateRefreshToken(refreshToken, userAgent, loadUser) {
+// Exchanges a refresh token for a new pair. Returns { user, tokens }, or null
+// when it's not valid. `onReuse(userId)` is called when an already-used token
+// comes back (a sign it was stolen).
+export async function rotateRefreshToken(refreshToken, userAgent, loadUser, onReuse = () => {}) {
   const row = await queryOne(
     `SELECT id, user_id AS userId, family_id AS familyId, revoked_at AS revokedAt,
             expires_at <= CURRENT_TIMESTAMP AS expired
@@ -76,6 +78,7 @@ export async function rotateRefreshToken(refreshToken, userAgent, loadUser) {
   if (row.revokedAt) {
     // A token that was already used came back: assume it leaked.
     await revokeFamily(row.familyId);
+    onReuse(row.userId);
     return null;
   }
   if (Number(row.expired)) return null;

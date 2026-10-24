@@ -373,3 +373,46 @@ CREATE TABLE IF NOT EXISTS export_tokens (
   KEY idx_export_tokens_user (user_id),
   CONSTRAINT fk_export_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
+
+
+-- =====================================================================
+-- Activity logs and app-wide settings (admin panel → Logs, Log settings)
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 18. app_settings — small app-wide settings an admin can change, stored
+--     as JSON by key (e.g. "logs" → which log types are on, retention days).
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+  setting_key  VARCHAR(64)     NOT NULL,
+  value        JSON            NOT NULL,
+  updated_by   BIGINT UNSIGNED NULL,
+  updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (setting_key)
+);
+
+
+-- ---------------------------------------------------------------------
+-- 19. activity_logs — who did what, when (src/server/logs.js).
+--     category: security | admin | usage — each can be switched off.
+--     user_id:  the account the event is about; actor_id: who did it (an
+--     admin, for admin events). No foreign keys, so entries outlive deleted
+--     accounts until the retention period removes them. details never holds
+--     passwords, codes, tokens or anything a user wrote.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  created_at  TIMESTAMP(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  category    ENUM('security', 'admin', 'usage') NOT NULL,
+  event       VARCHAR(64)     NOT NULL,
+  user_id     BIGINT UNSIGNED NULL,
+  actor_id    BIGINT UNSIGNED NULL,
+  email       VARCHAR(254)    NULL,                 -- snapshot, readable after the account is gone
+  ip          VARCHAR(64)     NULL,
+  user_agent  VARCHAR(255)    NULL,
+  details     JSON            NULL,
+  PRIMARY KEY (id),
+  KEY idx_activity_logs_time (created_at),
+  KEY idx_activity_logs_user (user_id, created_at),
+  KEY idx_activity_logs_category (category, created_at)
+);

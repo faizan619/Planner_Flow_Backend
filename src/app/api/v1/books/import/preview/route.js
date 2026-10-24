@@ -2,6 +2,7 @@ import { ApiError, ok, route } from "@/server/http";
 import { requireUser } from "@/server/auth/session";
 import { rateLimit } from "@/server/rateLimit";
 import { interpretSheet, readSheet } from "@/server/bookImport";
+import { logEvent, requestMeta } from "@/server/logs";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 
@@ -26,5 +27,12 @@ export const POST = route(async (request) => {
 
   const result = interpretSheet(sheet);
   if (result.error) throw new ApiError(400, "INVALID_SHEET", result.error, { missing: result.missing });
+  logEvent(requestMeta(request), {
+    category: "usage",
+    event: "books_import_previewed",
+    userId: user.id,
+    email: user.email,
+    details: result.summary,
+  });
   return ok(result);
 });

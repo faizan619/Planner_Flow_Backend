@@ -4,6 +4,7 @@ import { requireUser } from "@/server/auth/session";
 import { verifyPassword } from "@/server/auth/password";
 import { publicUser, updateUser } from "@/server/users";
 import { DeleteMe, UpdateMe } from "@/server/validation";
+import { logEvent, requestMeta } from "@/server/logs";
 
 // GET /api/v1/me — the signed-in user's profile.
 export const GET = route(async (request) => {
@@ -15,7 +16,15 @@ export const GET = route(async (request) => {
 export const PATCH = route(async (request) => {
   const user = await requireUser(request);
   const changes = await readJson(request, UpdateMe);
-  return ok({ user: publicUser(await updateUser(user.id, changes)) });
+  const updated = await updateUser(user.id, changes);
+  logEvent(requestMeta(request), {
+    category: "usage",
+    event: "profile_updated",
+    userId: user.id,
+    email: user.email,
+    details: { changed: Object.keys(changes) },
+  });
+  return ok({ user: publicUser(updated) });
 });
 
 // DELETE /api/v1/me — { password }. Permanently deletes the account and,
@@ -27,5 +36,6 @@ export const DELETE = route(async (request) => {
     throw new ApiError(401, "INVALID_PASSWORD", "Wrong password", { fields: { password: ["Wrong password"] } });
   }
   await query("DELETE FROM users WHERE id = ?", [user.id]);
+  logEvent(requestMeta(request), { category: "security", event: "account_deleted", userId: user.id, email: user.email });
   return noContent();
 });

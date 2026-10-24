@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { query, queryOne, transaction } from "@/server/db";
 import { ApiError } from "@/server/http";
+import { logEvent } from "@/server/logs";
 
 // Admin announcements and each user's inbox of them.
 
@@ -18,9 +19,9 @@ export const NewAnnouncement = z
   });
 
 // Creates the announcement and its inbox rows (active users only).
-// Returns { id, title, body, recipients }.
-export async function createAnnouncement(admin, { title, body, audience, userIds }) {
-  return transaction(async (q) => {
+// Returns { id, title, body, recipients }. `meta` is for the admin log.
+export async function createAnnouncement(admin, { title, body, audience, userIds }, meta) {
+  const announcement = await transaction(async (q) => {
     const result = await q("INSERT INTO announcements (admin_id, title, body, audience) VALUES (?, ?, ?, ?)", [
       admin.id,
       title,
@@ -42,6 +43,13 @@ export async function createAnnouncement(admin, { title, body, audience, userIds
     if (inserted.affectedRows === 0) throw new ApiError(400, "NO_RECIPIENTS", "None of the chosen users are active");
     return { id, title, body, recipients: inserted.affectedRows };
   });
+  logEvent(meta, {
+    category: "admin",
+    event: "announcement_sent",
+    actorId: admin.id,
+    details: { announcementId: String(announcement.id), audience, recipients: announcement.recipients },
+  });
+  return announcement;
 }
 
 export function listAnnouncements(limit = 50) {

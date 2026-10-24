@@ -24,9 +24,11 @@ export async function rateLimit(bucket, { limit, windowSeconds }) {
   );
   if (row.hits > limit) {
     const retryAfter = Math.max(1, Number(row.retryAfter));
-    throw new ApiError(429, "RATE_LIMITED", "Too many attempts. Please wait and try again.", {
+    const error = new ApiError(429, "RATE_LIMITED", "Too many attempts. Please wait and try again.", {
       retryAfter,
       headers: { "Retry-After": String(retryAfter) },
     });
+    error.limit = bucket.split(":").slice(0, 2).join(":"); // e.g. "login:email", for the security log
+    throw error;
   }
 }

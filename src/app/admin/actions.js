@@ -10,6 +10,7 @@ import { NewAnnouncement, createAnnouncement } from "@/server/announcements";
 import { burnPasswordCheck, verifyPassword } from "@/server/auth/password";
 import { endAdminSession, requireAdminPage, startAdminSession } from "@/server/auth/webSession";
 import { ApiError } from "@/server/http";
+import { actionMeta, logEvent } from "@/server/logs";
 import { pushAnnouncement } from "@/server/push";
 import { rateLimit } from "@/server/rateLimit";
 import { findUserByEmail } from "@/server/users";
@@ -36,15 +37,27 @@ export async function loginAction(_previous, formData) {
     throw error;
   }
 
+  const meta = await actionMeta();
   const user = await findUserByEmail(email);
+  const fail = (reason) =>
+    logEvent(meta, { category: "security", event: "admin_login_failed", userId: user?.id ?? null, email, details: { reason } });
+
   if (!user) {
     await burnPasswordCheck(password);
+    fail("unknown email");
     return { error: "Wrong email or password." };
   }
-  if (!(await verifyPassword(user.passwordHash, password))) return { error: "Wrong email or password." };
-  if (user.role !== "admin" || user.status !== "active") return { error: "This account can't use the admin panel." };
+  if (!(await verifyPassword(user.passwordHash, password))) {
+    fail("wrong password");
+    return { error: "Wrong email or password." };
+  }
+  if (user.role !== "admin" || user.status !== "active") {
+    fail(user.role !== "admin" ? "not an admin" : "account deactivated");
+    return { error: "This account can't use the admin panel." };
+  }
 
   await startAdminSession(user, (await headers()).get("user-agent"));
+  logEvent(meta, { category: "security", event: "login", userId: user.id, email: user.email, details: { via: "admin panel" } });
   redirect("/admin");
 }
 
@@ -58,7 +71,7 @@ const StatusForm = z.object({ userId: z.string().regex(/^\d+$/), status: z.enum(
 export async function setUserStatusAction(formData) {
   const admin = await requireAdminPage();
   const { userId, status } = StatusForm.parse({ userId: formData.get("userId"), status: formData.get("status") });
-  await setUserStatus(admin, userId, status);
+  await setUserStatus(admin, userId, status, await actionMeta());
   refresh();
 }
 
@@ -76,7 +89,7 @@ export async function sendAnnouncementAction(_previous, formData) {
 
   let announcement;
   try {
-    announcement = await createAnnouncement(admin, parsed.data);
+    announcement = await createAnnouncement(admin, parsed.data, await actionMeta());
   } catch (error) {
     if (error instanceof ApiError) return { error: error.message, values: Object.fromEntries(formData) };
     throw error;

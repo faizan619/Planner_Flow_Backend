@@ -2,6 +2,7 @@ import { z } from "zod";
 import { query } from "@/server/db";
 import { noContent, readJson, route } from "@/server/http";
 import { requireUser } from "@/server/auth/session";
+import { logEvent, requestMeta } from "@/server/logs";
 
 const Device = z.object({ token: z.string().trim().min(10).max(255), platform: z.enum(["android", "ios"]) });
 const DeviceToken = z.object({ token: z.string().trim().min(10).max(255) });
@@ -16,6 +17,7 @@ export const POST = route(async (request) => {
      ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), platform = VALUES(platform), last_seen_at = CURRENT_TIMESTAMP`,
     [token, user.id, platform]
   );
+  logEvent(requestMeta(request), { category: "usage", event: "device_registered", userId: user.id, email: user.email, details: { platform } });
   return noContent();
 });
 

@@ -5,6 +5,7 @@ import { consumeCode } from "@/server/auth/codes";
 import { issueTokens } from "@/server/auth/tokens";
 import { findUserByEmail, publicUser } from "@/server/users";
 import { VerifyEmail } from "@/server/validation";
+import { logEvent, requestMeta } from "@/server/logs";
 
 // POST /api/v1/auth/verify-email — { email, code } → signs the user in.
 export const POST = route(async (request) => {
@@ -18,11 +19,15 @@ export const POST = route(async (request) => {
   });
   if (!user || user.emailVerifiedAt) throw invalid;
   if (user.status !== "active") throw new ApiError(403, "ACCOUNT_DEACTIVATED", "This account has been deactivated");
-  if (!(await consumeCode(user.id, "verify", code))) throw invalid;
+  if (!(await consumeCode(user.id, "verify", code))) {
+    logEvent(requestMeta(request), { category: "security", event: "email_verify_failed", userId: user.id, email: user.email });
+    throw invalid;
+  }
 
   await query("UPDATE users SET email_verified_at = CURRENT_TIMESTAMP, last_login_at = CURRENT_TIMESTAMP WHERE id = ?", [
     user.id,
   ]);
   const tokens = await issueTokens(user, request.headers.get("user-agent"));
+  logEvent(requestMeta(request), { category: "security", event: "email_verified", userId: user.id, email: user.email });
   return ok({ user: publicUser({ ...user, emailVerifiedAt: new Date() }), ...tokens });
 });

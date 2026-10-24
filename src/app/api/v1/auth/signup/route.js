@@ -5,6 +5,7 @@ import { hashPassword } from "@/server/auth/password";
 import { sendCode } from "@/server/auth/codes";
 import { createUser } from "@/server/users";
 import { Signup } from "@/server/validation";
+import { logEvent, requestMeta } from "@/server/logs";
 
 // POST /api/v1/auth/signup — { name, email, password, timezone? }
 // Creates an unverified account and emails a 6-digit code for /verify-email.
@@ -25,5 +26,6 @@ export const POST = route(async (request) => {
   }
 
   await sendCode(user, "verify");
+  logEvent(requestMeta(request), { category: "security", event: "signup", userId: user.id, email: user.email });
   return ok({ email: user.email, verificationRequired: true }, 201);
 });

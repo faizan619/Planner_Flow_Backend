@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { logEvent, requestMeta } from "@/server/logs";
 
 // Shared helpers for /api/v1 route handlers.
 //
@@ -37,6 +38,13 @@ export function route(handler) {
       return await handler(request, context);
     } catch (error) {
       if (error instanceof ApiError) {
+        if (error.code === "RATE_LIMITED") {
+          logEvent(requestMeta(request), {
+            category: "security",
+            event: "rate_limited",
+            details: { limit: error.limit, path: new URL(request.url).pathname },
+          });
+        }
         return errorResponse(error.status, error.code, error.message, error.extra);
       }
       const url = new URL(request.url);

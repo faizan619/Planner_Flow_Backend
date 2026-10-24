@@ -1,5 +1,4 @@
 import "server-only";
-import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { issueTokens, revokeFamilyOf, userIdForRefreshToken } from "@/server/auth/tokens";
@@ -30,15 +29,17 @@ export async function endAdminSession() {
   store.delete({ name: COOKIE, path: "/admin" });
 }
 
-// The signed-in admin for this request, or null. Re-checked on every request
-// (cached per request), so losing the admin role takes effect immediately.
-export const getAdmin = cache(async () => {
+// The signed-in admin for this request, or null. Re-checked on every call,
+// so losing the admin role takes effect immediately. Deliberately not wrapped
+// in React cache(): sharing one lookup between the layout and a page makes
+// Next.js treat the page's check as layout data that blocks navigation.
+export async function getAdmin() {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const userId = await userIdForRefreshToken(token);
   const user = userId ? await findUserById(userId) : null;
   return user && user.role === "admin" && user.status === "active" ? user : null;
-});
+}
 
 // For admin pages and Server Actions: the admin, or a redirect to sign-in.
 export async function requireAdminPage() {

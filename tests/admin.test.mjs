@@ -111,6 +111,15 @@ describe("announcements and inbox", () => {
       return rows.every((row) => row.push_status === "skipped");
     });
     assert.ok(skipped, "push is marked skipped without FIREBASE_SERVICE_ACCOUNT");
+
+    // The admin's history lists it with its counts.
+    const history = await api("GET", "/api/v1/admin/announcements", { token: admin.accessToken });
+    assert.equal(history.status, 200);
+    const listed = history.body.announcements.find((item) => item.id === String(sent.body.announcement.id));
+    assert.equal(listed.title, "New feature");
+    assert.equal(listed.adminName, "Test");
+    assert.equal(listed.recipients, sent.body.announcement.recipients);
+    assert.equal(listed.skipped, listed.recipients);
   });
 
   test("selected audience only reaches the chosen users", async () => {

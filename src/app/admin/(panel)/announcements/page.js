@@ -1,17 +1,29 @@
+import { Suspense } from "react";
 import { listUsers } from "@/server/admin";
 import { listAnnouncements } from "@/server/announcements";
 import { requireAdminPage } from "@/server/auth/webSession";
-import { Card, formatDate } from "../../ui";
+import { Card, Loading, formatDate } from "../../ui";
 import { AnnouncementForm } from "./AnnouncementForm";
 
-export default async function AdminAnnouncements() {
+// The heading shows at once; the form and history load in their own boundary.
+export default function AdminAnnouncements() {
+  return (
+    <div className="flex flex-col gap-6">
+      <h1 className="text-2xl font-bold">Announcements</h1>
+      <Suspense fallback={<Loading />}>
+        <Announcements />
+      </Suspense>
+    </div>
+  );
+}
+
+async function Announcements() {
   await requireAdminPage();
   const [announcements, users] = await Promise.all([listAnnouncements(), listUsers()]);
   const activeUsers = users.filter((user) => user.status === "active").map(({ id, name, email }) => ({ id, name, email }));
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Announcements</h1>
+    <>
       <Card title="New announcement">
         <AnnouncementForm users={activeUsers} />
       </Card>
@@ -35,6 +47,6 @@ export default async function AdminAnnouncements() {
           </ul>
         )}
       </Card>
-    </div>
+    </>
   );
 }

@@ -54,7 +54,8 @@ export function listAnnouncements(limit = 50) {
      FROM announcements a
      LEFT JOIN users u ON u.id = a.admin_id
      LEFT JOIN announcement_recipients r ON r.announcement_id = a.id
-     GROUP BY a.id ORDER BY a.created_at DESC, a.id DESC LIMIT ?`,
+     GROUP BY a.id, a.title, a.body, a.audience, a.created_at, u.name
+     ORDER BY a.created_at DESC, a.id DESC LIMIT ?`,
     [limit]
   ).then((rows) =>
     rows.map((row) => ({

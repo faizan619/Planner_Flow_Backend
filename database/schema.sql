@@ -355,3 +355,21 @@ CREATE TABLE IF NOT EXISTS device_tokens (
   KEY idx_device_tokens_user (user_id),
   CONSTRAINT fk_device_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
+
+
+-- ---------------------------------------------------------------------
+-- 17. export_tokens — one-time links for "Export my data". The app asks for
+--     a link, the phone's browser opens it and downloads the file. A link
+--     works once, for 10 minutes; only its SHA-256 hash is stored.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS export_tokens (
+  token_hash  CHAR(64)        NOT NULL,
+  user_id     BIGINT UNSIGNED NOT NULL,
+  format      ENUM('json', 'xlsx') NOT NULL,
+  expires_at  TIMESTAMP       NOT NULL,
+  used_at     TIMESTAMP       NULL,
+  created_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (token_hash),
+  KEY idx_export_tokens_user (user_id),
+  CONSTRAINT fk_export_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);

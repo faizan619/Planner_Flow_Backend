@@ -30,10 +30,21 @@ async function submitLogin(email, password) {
 const getPanel = (path, cookie) => fetch(`${BASE_URL}${path}`, { headers: cookie ? { cookie } : {} }).then((r) => r.text());
 
 describe("admin web panel", () => {
-  test("signed out, panel pages redirect to sign-in and show no data", async () => {
-    const html = await getPanel("/admin/users");
+  test("signed out, panel pages redirect to sign-in before rendering", async () => {
+    for (const path of ["/admin", "/admin/users", "/admin/announcements"]) {
+      const response = await fetch(`${BASE_URL}${path}`, { redirect: "manual" });
+      assert.equal(response.status, 307, path);
+      assert.equal(new URL(response.headers.get("location"), BASE_URL).pathname, "/admin/login", path);
+      assert.doesNotMatch(await response.text(), /@test\.local/, "no user emails leak");
+    }
+    const login = await fetch(`${BASE_URL}/admin/login`, { redirect: "manual" });
+    assert.equal(login.status, 200, "the sign-in page itself isn't redirected");
+  });
+
+  test("a made-up session cookie gets past the proxy but not the server check", async () => {
+    const html = await getPanel("/admin/users", "pf_admin=not-a-real-token");
     assert.match(html, /NEXT_REDIRECT;replace;\/admin\/login/);
-    assert.doesNotMatch(html, /@test\.local/, "no user emails leak");
+    assert.doesNotMatch(html, /@test\.local/);
   });
 
   test("an admin signs in with an httpOnly cookie and sees the panel", async () => {

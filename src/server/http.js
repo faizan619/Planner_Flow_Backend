@@ -65,3 +65,12 @@ export function clientIp(request) {
   if (forwarded) return forwarded.split(",")[0].trim();
   return request.headers.get("x-real-ip") ?? "unknown";
 }
+
+// The address the client used to reach this server (for links we hand out).
+// On Vercel and other proxies this comes from the forwarded headers.
+export function publicOrigin(request) {
+  const url = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? url.host;
+  const proto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+  return `${proto.split(",")[0].trim()}://${host.split(",")[0].trim()}`;
+}

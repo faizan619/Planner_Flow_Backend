@@ -37,6 +37,10 @@ export function Card({ title, children, className = "" }) {
   );
 }
 
+export function Loading() {
+  return <p className="text-sm text-zinc-500">Loading…</p>;
+}
+
 export function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });

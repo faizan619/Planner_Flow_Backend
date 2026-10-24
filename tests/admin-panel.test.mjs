@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { BASE_URL, PASSWORD, sql, startServer, stopServer, uniqueIp, verifiedUser } from "./helpers/server.mjs";
+import { BASE_URL, PASSWORD, api, sql, startServer, stopServer, uniqueIp, verifiedUser } from "./helpers/server.mjs";
 
 before(startServer, { timeout: 240_000 });
 after(stopServer);
@@ -83,5 +83,43 @@ describe("admin web panel", () => {
 
     await sql("UPDATE users SET role = 'user' WHERE email = ?", [admin.email]);
     assert.match(await getPanel("/admin", cookie), /NEXT_REDIRECT;replace;\/admin\/login/);
+  });
+
+  test("the Logs page shows entries to an admin", async () => {
+    const admin = await verifiedUser("panel-logs");
+    await sql("UPDATE users SET role = 'admin' WHERE email = ?", [admin.email]);
+    const { cookie } = await submitLogin(admin.email, PASSWORD);
+    // The sign-in itself is logged; give it a moment to be written.
+    let html = "";
+    for (let i = 0; i < 20 && !html.includes(admin.email); i++) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      html = await getPanel("/admin/logs?category=security", cookie);
+    }
+    assert.match(html, /Signed in/);
+    assert.ok(html.includes(admin.email));
+  });
+
+  test("the Settings form saves the log switches and retention", async () => {
+    const admin = await verifiedUser("panel-settings");
+    await sql("UPDATE users SET role = 'admin' WHERE email = ?", [admin.email]);
+    const { cookie } = await submitLogin(admin.email, PASSWORD);
+
+    const page = await getPanel("/admin/settings", cookie);
+    const hidden = [...page.matchAll(/<input type="hidden" name="([^"]+)"(?: value="([^"]*)")?\/?>/g)];
+    assert.ok(hidden.some(([, name]) => name.startsWith("$ACTION")), "settings form carries its action");
+    const form = new FormData();
+    for (const [, name, value = ""] of hidden) form.append(decode(name), decode(value));
+    form.append("security", "on");
+    form.append("admin", "on"); // usage left unticked
+    form.append("retentionDays", "60");
+    const saved = await fetch(`${BASE_URL}/admin/settings`, { method: "POST", body: form, headers: { origin: BASE_URL, cookie } });
+    assert.equal(saved.status, 200);
+
+    const current = await api("GET", "/api/v1/admin/log-settings", { token: admin.accessToken });
+    assert.deepEqual(current.body.settings, { security: true, admin: true, usage: false, retentionDays: 60 });
+    await api("PATCH", "/api/v1/admin/log-settings", {
+      token: admin.accessToken,
+      body: { security: true, admin: true, usage: true, retentionDays: 45 },
+    });
   });
 });

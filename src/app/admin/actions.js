@@ -10,9 +10,10 @@ import { NewAnnouncement, createAnnouncement } from "@/server/announcements";
 import { burnPasswordCheck, verifyPassword } from "@/server/auth/password";
 import { endAdminSession, requireAdminPage, startAdminSession } from "@/server/auth/webSession";
 import { ApiError } from "@/server/http";
-import { actionMeta, logEvent } from "@/server/logs";
+import { actionMeta, logEvent, updateLogSettings } from "@/server/logs";
 import { pushAnnouncement } from "@/server/push";
 import { rateLimit } from "@/server/rateLimit";
+import { LogSettings } from "@/server/settings";
 import { findUserByEmail } from "@/server/users";
 import { Login } from "@/server/validation";
 
@@ -97,4 +98,18 @@ export async function sendAnnouncementAction(_previous, formData) {
   after(() => pushAnnouncement(announcement).catch((error) => console.error("push failed:", error.message)));
   refresh();
   return { success: `Sent to ${announcement.recipients} user${announcement.recipients === 1 ? "" : "s"}.` };
+}
+
+export async function saveLogSettingsAction(_previous, formData) {
+  const admin = await requireAdminPage();
+  const parsed = LogSettings.safeParse({
+    security: formData.get("security") === "on",
+    admin: formData.get("admin") === "on",
+    usage: formData.get("usage") === "on",
+    retentionDays: Number(formData.get("retentionDays")),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form." };
+  const settings = await updateLogSettings(admin, parsed.data, await actionMeta());
+  refresh();
+  return { success: "Saved.", settings };
 }

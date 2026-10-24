@@ -105,7 +105,7 @@ describe("activity logs", () => {
 
   test("changing the log settings is always recorded, even when switching the admin log off", async () => {
     await setLogSettings({ ...DEFAULTS, admin: false, retentionDays: 60 });
-    const [change] = await logsFor("event = 'log_settings_changed' AND details LIKE ?", ["%60%"]);
+    const [change] = await logsFor("event = 'log_settings_changed' AND actor_id = ? AND details LIKE ?", [settingsAdmin.user.id, "%60%"]);
     assert.equal(String(change.actor_id), settingsAdmin.user.id);
     assert.equal(change.category, "admin");
     const details = typeof change.details === "string" ? JSON.parse(change.details) : change.details;

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { listUsers } from "@/server/admin";
 import { requireAdminPage } from "@/server/auth/webSession";
 import { setUserStatusAction } from "../../actions";
@@ -51,6 +52,9 @@ async function UserTable({ searchParams }) {
                   {user.email}
                   {user.emailVerified ? "" : " · not verified"}
                 </p>
+                <Link href={`/admin/logs?userId=${user.id}`} className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                  Activity
+                </Link>
               </td>
               <td className="px-4 py-3">
                 <span className={user.status === "active" ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}>

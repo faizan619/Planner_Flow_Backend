@@ -40,7 +40,15 @@ let child;
 let db;
 export let outboxDir;
 
-export async function startServer() {
+// Test files share one server (npm test runs them with --test-isolation=none),
+// so every file can call startServer() and it only boots once.
+let starting;
+export function startServer() {
+  starting ??= boot();
+  return starting;
+}
+
+async function boot() {
   const url = testDatabaseUrl();
   await resetDatabase(url);
   db = await mysql.createConnection({ uri: url.toString(), ssl: { rejectUnauthorized: true }, timezone: "Z" });
@@ -54,6 +62,8 @@ export async function startServer() {
       MAIL_OUTBOX_DIR: outboxDir,
       AUTO_MIGRATE: "false",
       NODE_ENV: "development",
+      NEXT_DIST_DIR: ".next-test",
+      FIREBASE_SERVICE_ACCOUNT: "", // never send real pushes from tests
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -75,14 +85,17 @@ export async function startServer() {
   throw new Error(`next dev did not become ready:\n${log}`);
 }
 
+// Safe to call from every test file; only the first call does anything.
 export async function stopServer() {
-  await db?.end();
-  if (child && child.exitCode === null) {
+  const [server, connection, dir] = [child, db, outboxDir];
+  child = db = outboxDir = null;
+  await connection?.end();
+  if (server && server.exitCode === null) {
     // On Windows the dev server spawns workers; kill the whole tree.
-    if (process.platform === "win32") spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
-    else child.kill("SIGTERM");
+    if (process.platform === "win32") spawn("taskkill", ["/pid", String(server.pid), "/T", "/F"], { stdio: "ignore" });
+    else server.kill("SIGTERM");
   }
-  if (outboxDir) await rm(outboxDir, { recursive: true, force: true });
+  if (dir) await rm(dir, { recursive: true, force: true });
 }
 
 // Direct SQL against the test database, for arranging state (e.g. deactivating a user).
@@ -117,3 +130,16 @@ export async function lastCode(to) {
 let counter = 0;
 export const uniqueEmail = (label = "user") => `${label}.${Date.now()}.${++counter}@test.local`;
 export const uniqueIp = () => `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${++counter % 250}`;
+
+export const PASSWORD = "correct horse battery";
+
+// Signs up and verifies a new account; returns its email, ip and tokens.
+export async function verifiedUser(label) {
+  const email = uniqueEmail(label);
+  const ip = uniqueIp();
+  const signup = await api("POST", "/api/v1/auth/signup", { body: { name: "Test", email, password: PASSWORD }, ip });
+  if (signup.status !== 201) throw new Error(`signup failed: ${JSON.stringify(signup.body)}`);
+  const verify = await api("POST", "/api/v1/auth/verify-email", { body: { email, code: await lastCode(email) }, ip });
+  if (verify.status !== 200) throw new Error(`verify failed: ${JSON.stringify(verify.body)}`);
+  return { email, ip, ...verify.body };
+}

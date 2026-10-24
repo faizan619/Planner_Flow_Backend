@@ -123,3 +123,14 @@ export async function revokeAllForUser(userId) {
     [userId]
   );
 }
+
+// The user id behind a refresh token that is still valid (not revoked or
+// expired), or null. Used by the admin web panel's cookie session.
+export async function userIdForRefreshToken(refreshToken) {
+  const row = await queryOne(
+    `SELECT user_id AS userId FROM refresh_tokens
+     WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > CURRENT_TIMESTAMP`,
+    [sha256(refreshToken)]
+  );
+  return row?.userId ?? null;
+}

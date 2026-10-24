@@ -1,22 +1,19 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { api, lastCode, sql, startServer, stopServer, uniqueEmail, uniqueIp } from "./helpers/server.mjs";
+import {
+  PASSWORD,
+  api,
+  lastCode,
+  sql,
+  startServer,
+  stopServer,
+  uniqueEmail,
+  uniqueIp,
+  verifiedUser,
+} from "./helpers/server.mjs";
 
 before(startServer, { timeout: 240_000 });
 after(stopServer);
-
-const PASSWORD = "correct horse battery";
-
-// Signs up and verifies a new account; returns its email and tokens.
-async function verifiedUser(label) {
-  const email = uniqueEmail(label);
-  const ip = uniqueIp();
-  const signup = await api("POST", "/api/v1/auth/signup", { body: { name: "Test", email, password: PASSWORD }, ip });
-  assert.equal(signup.status, 201);
-  const verify = await api("POST", "/api/v1/auth/verify-email", { body: { email, code: await lastCode(email) }, ip });
-  assert.equal(verify.status, 200);
-  return { email, ip, ...verify.body };
-}
 
 describe("signup and verification", () => {
   test("rejects invalid input with field errors", async () => {

@@ -21,6 +21,7 @@ export const pool =
     uri: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: true }, // TiDB Cloud requires TLS
     timezone: "Z", // TIMESTAMP columns come back as JS Dates in UTC
+    dateStrings: ["DATE"], // DATE columns stay "YYYY-MM-DD" (a calendar day, not an instant)
     connectionLimit: 10,
     // BOOLEAN columns (TINYINT(1)) come back as true/false instead of 1/0.
     typeCast(field, next) {

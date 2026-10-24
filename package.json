@@ -10,11 +10,12 @@
     "lint": "eslint",
     "db:setup": "node scripts/setup-db.mjs",
     "make-admin": "node scripts/make-admin.mjs",
-    "test": "node --test --test-concurrency=1 \"tests/**/*.test.mjs\""
+    "test": "node --test --test-isolation=none \"tests/**/*.test.mjs\""
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
     "dotenv": "^18.0.9",
+    "exceljs": "^4.4.0",
     "jose": "^6.2.13",
     "mysql2": "^3.24.6",
     "next": "16.4.3",

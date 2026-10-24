@@ -8,15 +8,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:setup": "node scripts/setup-db.mjs"
+    "db:setup": "node scripts/setup-db.mjs",
+    "make-admin": "node scripts/make-admin.mjs",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.mjs\""
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
     "dotenv": "^18.0.9",
+    "jose": "^6.2.13",
     "mysql2": "^3.24.6",
     "next": "16.4.3",
+    "nodemailer": "^10.2.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

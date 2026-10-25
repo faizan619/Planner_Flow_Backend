@@ -416,3 +416,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   KEY idx_activity_logs_user (user_id, created_at),
   KEY idx_activity_logs_category (category, created_at)
 );
+
+-- A user removed this announcement from their own inbox. The row stays, so
+-- the admin's recipient and read counts don't change.
+ALTER TABLE announcement_recipients ADD COLUMN IF NOT EXISTS dismissed_at TIMESTAMP NULL;

@@ -27,6 +27,7 @@ export default function AdminLayout({ children }) {
             <Link href="/admin/announcements" className="hover:underline">Announcements</Link>
             <Link href="/admin/logs" className="hover:underline">Logs</Link>
             <Link href="/admin/settings" className="hover:underline">Settings</Link>
+            <Link href="/admin/docs" className="hover:underline">Docs</Link>
           </nav>
           <form action={logoutAction} className="ml-auto flex items-center gap-3 text-sm">
             <Suspense fallback={null}>

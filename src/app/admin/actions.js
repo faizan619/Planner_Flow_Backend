@@ -6,7 +6,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { setUserStatus } from "@/server/admin";
-import { NewAnnouncement, createAnnouncement } from "@/server/announcements";
+import { NewAnnouncement, createAnnouncement, deleteAnnouncement } from "@/server/announcements";
 import { burnPasswordCheck, verifyPassword } from "@/server/auth/password";
 import { endAdminSession, requireAdminPage, startAdminSession } from "@/server/auth/webSession";
 import { ApiError } from "@/server/http";
@@ -112,4 +112,13 @@ export async function saveLogSettingsAction(_previous, formData) {
   const settings = await updateLogSettings(admin, parsed.data, await actionMeta());
   refresh();
   return { success: "Saved.", settings };
+}
+
+const AnnouncementId = z.string().regex(/^\d+$/);
+
+export async function deleteAnnouncementAction(formData) {
+  const admin = await requireAdminPage();
+  const id = AnnouncementId.parse(formData.get("announcementId"));
+  await deleteAnnouncement(admin, id, await actionMeta());
+  refresh();
 }

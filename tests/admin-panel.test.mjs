@@ -122,4 +122,37 @@ describe("admin web panel", () => {
       body: { security: true, admin: true, usage: true, retentionDays: 45 },
     });
   });
+
+  test("the Docs open for admins only, and every tab renders", async () => {
+    const signedOut = await fetch(`${BASE_URL}/admin/docs`, { redirect: "manual" });
+    assert.equal(signedOut.status, 307, "signed-out visitors are sent to sign-in");
+
+    const admin = await verifiedUser("panel-docs");
+    await sql("UPDATE users SET role = 'admin' WHERE email = ?", [admin.email]);
+    const { cookie } = await submitLogin(admin.email, PASSWORD);
+    const tabs = {
+      overview: "Ideas behind the code",
+      setup: "Everyday commands",
+      structure: "App: Planner_Flow",
+      "how-it-works": "Offline sync",
+      week: "Changing the week start day",
+      features: "Book tracker and import",
+      notifications: "Push notifications",
+      api: "POST /auth/signup",
+      database: "Columns every synced table has",
+      security: "Protections in place",
+      tests: "Server tests",
+      builds: "When is a new build needed?",
+      troubleshooting: "only_full_group_by",
+    };
+    for (const [tab, text] of Object.entries(tabs)) {
+      const html = await getPanel(`/admin/docs?tab=${tab}`, cookie);
+      assert.ok(html.includes(text), `tab "${tab}" shows its content`);
+      assert.doesNotMatch(html, /NEXT_REDIRECT/, `tab "${tab}" isn't redirected`);
+    }
+
+    const user = await verifiedUser("panel-docs-user");
+    const asUser = await submitLogin(user.email, PASSWORD);
+    assert.equal(asUser.cookie, undefined, "regular users can't get a panel session to read the docs");
+  });
 });

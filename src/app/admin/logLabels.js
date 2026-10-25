@@ -15,6 +15,7 @@ export const EVENT_LABELS = {
   user_deactivated: "Deactivated a user",
   user_reactivated: "Reactivated a user",
   announcement_sent: "Sent an announcement",
+  announcement_deleted: "Deleted an announcement",
   log_settings_changed: "Changed log settings",
   app_active: "Used the app",
   profile_updated: "Updated profile",

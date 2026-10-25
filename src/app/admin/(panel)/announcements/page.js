@@ -4,6 +4,7 @@ import { listAnnouncements } from "@/server/announcements";
 import { requireAdminPage } from "@/server/auth/webSession";
 import { Card, Loading, formatDate } from "../../ui";
 import { AnnouncementForm } from "./AnnouncementForm";
+import { DeleteAnnouncementButton } from "./DeleteAnnouncementButton";
 
 // The heading shows at once; the form and history load in their own boundary.
 export default function AdminAnnouncements() {
@@ -35,7 +36,10 @@ async function Announcements() {
           <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
             {announcements.map((item) => (
               <li key={item.id} className="py-3">
-                <p className="font-medium">{item.title}</p>
+                <div className="flex items-start justify-between gap-4">
+                  <p className="font-medium">{item.title}</p>
+                  <DeleteAnnouncementButton id={item.id} title={item.title} />
+                </div>
                 <p className="whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-300">{item.body}</p>
                 <p className="mt-1 text-xs text-zinc-500">
                   {formatDate(item.createdAt)} · {item.audience === "all" ? "All users" : "Selected users"} · {item.recipients} recipient

@@ -83,14 +83,17 @@ export async function inbox(userId, limit = 100) {
   const items = await query(
     `SELECT a.id, a.title, a.body, a.created_at AS createdAt, r.read_at AS readAt
      FROM announcement_recipients r JOIN announcements a ON a.id = r.announcement_id
-     WHERE r.user_id = ? ORDER BY a.created_at DESC, a.id DESC LIMIT ?`,
+     WHERE r.user_id = ? AND r.dismissed_at IS NULL ORDER BY a.created_at DESC, a.id DESC LIMIT ?`,
     [userId, limit]
   );
   return { items: items.map((item) => ({ ...item, id: String(item.id) })), unreadCount: await unreadCount(userId) };
 }
 
 export async function unreadCount(userId) {
-  const row = await queryOne("SELECT COUNT(*) AS n FROM announcement_recipients WHERE user_id = ? AND read_at IS NULL", [userId]);
+  const row = await queryOne(
+    "SELECT COUNT(*) AS n FROM announcement_recipients WHERE user_id = ? AND read_at IS NULL AND dismissed_at IS NULL",
+    [userId]
+  );
   return Number(row.n);
 }
 
@@ -105,4 +108,37 @@ export async function markRead(userId, announcementId) {
 
 export async function markAllRead(userId) {
   await query("UPDATE announcement_recipients SET read_at = CURRENT_TIMESTAMP WHERE user_id = ? AND read_at IS NULL", [userId]);
+}
+
+// The user removes an announcement from their own inbox. Only their row is
+// touched; it counts as read, and the admin's history keeps its numbers.
+export async function dismiss(userId, announcementId) {
+  const result = await query(
+    `UPDATE announcement_recipients
+     SET dismissed_at = CURRENT_TIMESTAMP, read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+     WHERE user_id = ? AND announcement_id = ? AND dismissed_at IS NULL`,
+    [userId, announcementId]
+  );
+  if (result.affectedRows === 0) throw new ApiError(404, "NOT_FOUND", "Announcement not found");
+}
+
+// An admin deletes an announcement for everyone: it leaves every inbox
+// (recipient rows go with it) and the history. Phones that already showed
+// the push keep that notification until it's dismissed; tapping it opens the
+// inbox, where it's gone.
+export async function deleteAnnouncement(admin, announcementId, meta) {
+  const existing = await queryOne(
+    `SELECT a.audience, COUNT(r.user_id) AS recipients FROM announcements a
+     LEFT JOIN announcement_recipients r ON r.announcement_id = a.id
+     WHERE a.id = ? GROUP BY a.id, a.audience`,
+    [announcementId]
+  );
+  if (!existing) throw new ApiError(404, "NOT_FOUND", "Announcement not found");
+  await query("DELETE FROM announcements WHERE id = ?", [announcementId]);
+  logEvent(meta, {
+    category: "admin",
+    event: "announcement_deleted",
+    actorId: admin.id,
+    details: { announcementId: String(announcementId), audience: existing.audience, recipients: Number(existing.recipients) },
+  });
 }

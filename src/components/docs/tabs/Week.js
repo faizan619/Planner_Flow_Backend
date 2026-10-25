@@ -8,6 +8,14 @@ export default function Week() {
         weekly tasks. All rules live in <C>Planner_Flow/src/lib/week.js</C> and <C>dates.js</C>, with tests.
       </Lead>
 
+      <Section id="layout" title="Page layout">
+        <List>
+          <li><strong>Header</strong>: greeting by time of day (in the user’s time zone), the week across the full width with arrows, and three chips: done today, weekly tasks, best current streak.</li>
+          <li><strong>Day strip</strong>: the seven days with a bar each for how many habits were done (✓ when all); today highlighted (<C>dayProgress</C>).</li>
+          <li>A 🎉 line when every habit is done today; then motivation, daily habits (with a weekly bar and 🔥 streak per habit) and weekly tasks.</li>
+        </List>
+      </Section>
+
       <Section id="weeks" title="1. Weeks and “today”">
         <List>
           <li>Each user picks the day weeks start on (Monday by default) and has a time zone (India by default).</li>
@@ -47,13 +55,16 @@ export default function Week() {
           <li>Tasks are open (☐), done (☑) or failed (✗). A task becomes ✗ when the week it’s shown in is over and it isn’t done.</li>
           <li><strong>Carry →</strong> on a ✗ task copies it into the current week. The two are linked (carriedFromId / carriedToId); the original stays ✗ in its own week.</li>
           <li>Quick add’s “Weekly task” always adds to the current week.</li>
+          <li><strong>Drag to reorder</strong>: hold a task’s ≡ handle and move it. The new order shows at once; it’s written to the phone’s database (and synced) about a second after you stop, as one save, or straight away when the app goes to the background or you sign out (<C>queueTaskOrder</C> in <C>data/repo.js</C>). Only tasks whose position changed are saved (<C>applyOrder</C>, <C>dragTarget</C> in <C>lib/dragOrder.js</C>). Screen readers get “Move up / Move down” on the handle. Carried-in tasks start at the top until moved.</li>
+          <li>The card shows “3 of 5 done” with a progress bar; done tasks have a green edge, ✗ tasks a red one.</li>
         </List>
       </Section>
 
       <Section id="motivation" title="4. This week’s motivation">
         <P>
-          One line shown first on the page. It’s saved for the week you write it in; weeks without their own show the most recent
-          earlier one, so it carries forward without storing copies.
+          One line, added from quick add (+ → Weekly motivation). The card appears on the page only once a motivation exists;
+          tap it to edit. It’s saved for the week you write it in; weeks without their own show the most recent earlier one, so it
+          carries forward without storing copies.
         </P>
       </Section>
 
@@ -73,6 +84,11 @@ export default function Week() {
             ["Week total", "All habits’ done days out of the days so far (future days don’t count)"],
             ["Current streak 🔥", "Done days in a row up to today; if today isn’t marked yet it counts up to yesterday"],
             ["Best / longest streak", "The longest run of done days ever"],
+            ["This week vs last", "Change in the share of habit-days done, in percentage points (up, down or same)"],
+            ["Perfect days 🏆", "Days in the last 4 weeks (up to yesterday) when every habit that existed was done"],
+            ["Strongest day", "The weekday with the highest share of habits done over the last 4 weeks"],
+            ["Most consistent / needs attention", "Highest and lowest share over the last 28 days; a habit needs at least 3 days to count, and “needs attention” only shows below 60%"],
+            ["Task rate", "Weekly tasks finished out of planned over the last 8 weeks"],
             ["Charts", "Last 12 weeks: share of habit-days done; tasks planned vs finished"],
           ]}
         />

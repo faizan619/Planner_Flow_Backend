@@ -83,7 +83,8 @@ export default function Features() {
       <Section id="nav" title="6. Navigation and small touches">
         <List>
           <li>Floating pill tab bar: the active tab grows into a labelled chip. <C>MODERN_NAV</C> in <C>src/config/ui.js</C> switches back to the classic bar.</li>
-          <li>Swipe between tabs: right-to-left goes to the next tab (Week → Dashboard → … → Books), left-to-right goes back; tabs slide in from the side. Only clearly sideways swipes count (<C>src/lib/swipe.js</C>, <C>components/nav/SwipeTabs.js</C>), so scrolling and taps aren’t affected.</li>
+          <li>Swipe between tabs: right-to-left goes to the next tab (Week → Dashboard → … → Books), left-to-right goes back; the pages sit side by side, like Instagram, so while swiping you see the current page and the next one moving together; on release it springs to the nearest page, or the next one on a quick flick (past the first or last tab it only stretches a little). Pages are drawn ahead of time, so there’s no blank flash. Only clearly sideways swipes count (<C>src/lib/swipe.js</C>, <C>components/nav/PagerTabs.js</C>, a small pure-JS tab navigator), so scrolling and taps aren’t affected.</li>
+          <li>Quick add (+) actions: Weekly motivation, New habit, Weekly task, Reminder note, Money entry, Life lesson, Add book.</li>
           <li>Quick add (+): opens the right form on its tab by navigating with <C>?add=habit&amp;t=…</C>; <C>t</C> makes every tap a new request.</li>
           <li>Every pop-up sheet closes on a tap outside it, on ✕, or with Back. Password fields have a show / hide eye.</li>
         </List>

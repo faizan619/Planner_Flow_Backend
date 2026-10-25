@@ -44,7 +44,7 @@ export default function Overview() {
           rows={[
             ["Sign in · Create account · Verify email · Forgot / reset password", "Email + password; a 6-digit code by email confirms the address and resets the password"],
             ["Week (home tab)", "“This week’s motivation”, the habit grid with 7 day marks, weekly tasks; arrows move between weeks"],
-            ["Dashboard", "This week’s numbers, 12-week charts of habits and tasks, per-habit streaks"],
+            ["Dashboard", "A hero card with this week’s % and trend, stat tiles, insights (strongest day, most consistent habit, perfect days), 12-week charts and per-habit progress"],
             ["Reminders", "Notes (with an optional time) and Money (I owe / owed to me, totals)"],
             ["Journal", "Life lessons: search, tag filter, “On this day”; tap one to edit"],
             ["Books", "Yearly goal, stats and charts, reading list; add, re-read, import from Excel/CSV"],

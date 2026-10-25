@@ -53,7 +53,7 @@ src/
     _layout.js               theme, sign-in guard (signed in → app, else sign-in)
     (auth)/                  login, signup, verify, forgot, reset
     (app)/_layout.js         DataProvider → NotificationsProvider → LockProvider
-    (app)/(tabs)/            index (Week), dashboard, reminders, journal, books
+    (app)/(tabs)/            index (Week), dashboard, reminders (Notebook), books
     (app)/settings, inbox, admin, lesson/[id], book/[id], reading/[id], books-import
   api/client.js              fetch wrapper: tokens, automatic refresh, uploads
   auth/                      AuthProvider (sign in/out, profile) · storage (SecureStore)

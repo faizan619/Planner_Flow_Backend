@@ -85,6 +85,7 @@ const APP = [
   ["PIN lock (lock.test.mjs)", ["4–6 digits", "Locks after 30 s away, only when enabled", "5 free tries, then waits up to 15 minutes"]],
   ["Drag to reorder (dragOrder.test.mjs)", ["A short drag stays put; passing half of a neighbour takes its place, rows of any height, gaps included", "Up and down, stopping at the ends", "Applying an order renumbers and saves only what changed, keeping tasks added since"]],
   ["Dashboard insights (dashboard.test.mjs)", ["This week vs last week, in percentage points", "Encouraging line follows the week’s share", "Strongest weekday", "Perfect days, not spoiled by habits added later", "Most consistent and needs-attention habits (only below 60%, enough days)"]],
+  ["Reminders and Books pages (screens.test.mjs)", ["Notes grouped as overdue, today, upcoming, anytime", "Relative times: in 20 min, in 3 h, in 2 days, ago", "Money balance per person (case and spaces ignored)", "Reading-goal pace: ahead or behind, past and future years", "Reading now, newest first, with days so far", "Stable initials and cover colours", "Journal timeline by month, counts, a lesson to revisit that changes daily"]],
   ["Swiping between tabs (swipe.test.mjs)", ["Only clearly sideways moves count", "Right-to-left = next tab, left-to-right = previous", "A quick flick switches; a slow short drag doesn’t", "Nothing happens past the first or last tab"]],
 ];
 

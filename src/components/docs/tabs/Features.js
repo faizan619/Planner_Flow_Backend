@@ -5,10 +5,14 @@ export default function Features() {
     <>
       <Lead>Reminders, money, the journal, books, export and the app’s settings, and how each is built.</Lead>
 
-      <Section id="reminders" title="1. Reminders and money">
+      <Section id="reminders" title="1. Notebook: notes and money">
+        <P>
+          The <strong>Notebook</strong> tab holds three things, switched with cards at the top: Notes, Money and the Journal
+          (section 2). Its route is still <C>/reminders</C>, so reminder notifications and quick add keep working.
+        </P>
         <List>
-          <li><strong>Notes</strong>: text, optional reminder time, done. Open dated notes first (soonest first), then undated, then done; a past time shows “Overdue”.</li>
-          <li><strong>Money</strong>: person, amount, I owe / owed to me, what for, settled. Totals add up unsettled entries per currency.</li>
+          <li><strong>Notes</strong>: text, optional reminder time, done. The page groups open notes as Overdue, Today, Upcoming and Anytime (no time), each with a relative time such as “in 2 h” that updates every minute; done notes fold away under a “Done” button.</li>
+          <li><strong>Money</strong>: person, amount, I owe / owed to me, what for, settled. Totals add up unsettled entries per currency. The page shows a net-balance card (owed to you minus you owe, with a bar splitting the two) and groups open entries by person, each with a coloured initial and their balance (<C>moneyByPerson</C> in <C>src/lib/reminders.js</C>).</li>
           <li>Amounts are stored as whole <strong>paise</strong> (₹250.50 → 25050), so totals never pick up rounding errors, and shown with Indian grouping (₹1,00,000).</li>
         </List>
       </Section>
@@ -17,6 +21,7 @@ export default function Features() {
         <List>
           <li>Title, text (up to 5,000 characters), date and tags (lower-case, up to 10).</li>
           <li>Search matches every word across title, text and tags; tag chips filter; “On this day” shows lessons from today’s date in earlier years. All of this runs on the phone.</li>
+          <li>Shown in Notebook → Journal (<C>components/journal/JournalPanel.js</C>): counts (lessons, this month, tags), a “lesson to revisit” card that picks an older lesson (30+ days) and changes once a day, “On this day” memories, and a timeline grouped by month with a coloured date block and tag chips (<C>groupByMonth</C>, <C>journalStats</C>, <C>lessonToRevisit</C> in <C>src/lib/lessons.js</C>).</li>
         </List>
         <Note type="good" title="Encrypted at rest">
           The server stores title and text with AES-256-GCM (<C>src/server/crypto.js</C>) using <C>ENCRYPTION_KEY</C>. The user
@@ -29,6 +34,12 @@ export default function Features() {
         <P>
           A <strong>book</strong> (title, author, genre) can have several <strong>readings</strong> (Sr No, type, status, start, end,
           rating), so a re-read is Read #2 of the same book. A <strong>reading goal</strong> is set per year.
+        </P>
+        <P>
+          The Books page opens with the year’s goal: books finished, progress, a marker for where an even pace would be, and a line
+          such as “2 books ahead of schedule” (<C>goalPace</C> in <C>src/lib/books.js</C>). Below are tiles, a “Reading now” list with
+          how many days each book has run, monthly and genre charts, and the library with filter chips and counts. Books get a made-up
+          cover: a colour picked from the title (always the same one) and its initials (<C>src/lib/initials.js</C>, <C>components/Tiles.js</C>).
         </P>
         <Table
           head={["Rule", "Where it’s enforced"]}
@@ -83,7 +94,7 @@ export default function Features() {
       <Section id="nav" title="6. Navigation and small touches">
         <List>
           <li>Floating pill tab bar: the active tab grows into a labelled chip. <C>MODERN_NAV</C> in <C>src/config/ui.js</C> switches back to the classic bar.</li>
-          <li>Swipe between tabs: right-to-left goes to the next tab (Week → Dashboard → … → Books), left-to-right goes back; the pages sit side by side, like Instagram, so while swiping you see the current page and the next one moving together; on release it springs to the nearest page, or the next one on a quick flick (past the first or last tab it only stretches a little). Pages are drawn ahead of time, so there’s no blank flash. Only clearly sideways swipes count (<C>src/lib/swipe.js</C>, <C>components/nav/PagerTabs.js</C>, a small pure-JS tab navigator), so scrolling and taps aren’t affected.</li>
+          <li>Swipe between tabs: right-to-left goes to the next tab (Week → Dashboard → Notebook → Books), left-to-right goes back; the pages sit side by side, like Instagram, so while swiping you see the current page and the next one moving together; on release it springs to the nearest page, or the next one on a quick flick (past the first or last tab it only stretches a little). Pages are drawn ahead of time, so there’s no blank flash. Only clearly sideways swipes count (<C>src/lib/swipe.js</C>, <C>components/nav/PagerTabs.js</C>, a small pure-JS tab navigator), so scrolling and taps aren’t affected.</li>
           <li>Quick add (+) actions: Weekly motivation, New habit, Weekly task, Reminder note, Money entry, Life lesson, Add book.</li>
           <li>Quick add (+): opens the right form on its tab by navigating with <C>?add=habit&amp;t=…</C>; <C>t</C> makes every tap a new request.</li>
           <li>Every pop-up sheet closes on a tap outside it, on ✕, or with Back. Password fields have a show / hide eye.</li>

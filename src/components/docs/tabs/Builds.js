@@ -68,7 +68,7 @@ npx eas-cli@latest build -p android --profile development   # or preview / produ
           <li>Put the Vercel address in <C>eas.json</C> → production → <C>EXPO_PUBLIC_API_URL</C>, then build the production APK.</li>
         </Steps>
         <List>
-          <li>Check <C>https://YOUR-APP.vercel.app/api/v1/health</C> answers <C>{"{ ok: true }"}</C> after each deploy.</li>
+          <li>Check <C>https://planner-flow-backend.vercel.app/api/v1/health</C> answers <C>{"{ ok: true }"}</C> after each deploy.</li>
         </List>
       </Section>
     </>

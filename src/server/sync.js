@@ -128,7 +128,7 @@ const ENTITIES = {
     schema: z.object({
       id: z.uuid(),
       title: z.string().trim().min(1).max(200),
-      body: z.string().max(5000),
+      body: z.string().max(50000), // HTML from the app's rich text editor
       lessonDate: day,
       tags: z.array(z.string().trim().min(1).max(30)).max(10),
       ...base,

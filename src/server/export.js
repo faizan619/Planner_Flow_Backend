@@ -107,6 +107,22 @@ const STATUS_LABELS = { planned: "Planned", reading: "Reading", completed: "Comp
 // "YYYY-MM-DD" → a real Excel date (shown day-first, like the tracker).
 const excelDate = (day) => (day ? new Date(`${day}T00:00:00Z`) : null);
 
+// Lesson notes are HTML from the app's rich text editor (older ones are plain
+// text). Excel gets readable text; same rules as the app's lib/richText.js.
+const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", apos: "'", nbsp: " " };
+function htmlToText(body) {
+  if (!body || !/<\/?(p|h[1-6]|ul|ol|li|blockquote|strong|em|u|s|code|br|mark|a|span)\b[^>]*>/i.test(body)) return body ?? "";
+  return body
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>\s*<\/li>/gi, "</li>")
+    .replace(/<li\b[^>]*>/gi, "• ")
+    .replace(/<\/(p|h[1-6]|li|blockquote|ul|ol)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (_, name) => ENTITIES[name])
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function addSheet(workbook, name, columns, rows) {
   const sheet = workbook.addWorksheet(name);
   sheet.columns = columns.map(([header, key, width = 18, numFmt]) => ({ header, key, width, style: numFmt ? { numFmt } : {} }));
@@ -199,8 +215,8 @@ export async function buildWorkbook(data) {
   addSheet(
     workbook,
     "Life lessons",
-    [["Date", "date", 12, DATE], ["Lesson", "title", 36], ["What happened", "body", 80], ["Tags", "tags", 24]],
-    data.lessons.map((lesson) => ({ date: excelDate(lesson.lessonDate), title: lesson.title, body: lesson.body, tags: lesson.tags.join(", ") }))
+    [["Date", "date", 12, DATE], ["Lesson", "title", 36], ["Notes", "body", 80], ["Tags", "tags", 24]],
+    data.lessons.map((lesson) => ({ date: excelDate(lesson.lessonDate), title: lesson.title, body: htmlToText(lesson.body), tags: lesson.tags.join(", ") }))
   );
   addSheet(
     workbook,

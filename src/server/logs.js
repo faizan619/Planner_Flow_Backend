@@ -1,6 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { headers } from "next/headers";
+import { ipFromHeaders } from "@/server/clientIp";
 import { query } from "@/server/db";
 import { getSetting, setSetting } from "@/server/settings";
 
@@ -21,18 +22,13 @@ const SECRET_KEY = /pass|token|code|secret|otp|body|text|title|note/i;
 
 // IP and browser/app for a Route Handler request.
 export function requestMeta(request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return {
-    ip: forwarded ? forwarded.split(",")[0].trim() : request.headers.get("x-real-ip"),
-    userAgent: request.headers.get("user-agent"),
-  };
+  return { ip: ipFromHeaders(request.headers), userAgent: request.headers.get("user-agent") };
 }
 
 // The same for Server Actions (admin panel), which have no request object.
 export async function actionMeta() {
   const list = await headers();
-  const forwarded = list.get("x-forwarded-for");
-  return { ip: forwarded ? forwarded.split(",")[0].trim() : list.get("x-real-ip"), userAgent: list.get("user-agent") };
+  return { ip: ipFromHeaders(list), userAgent: list.get("user-agent") };
 }
 
 function cleanDetails(details) {

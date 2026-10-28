@@ -8,6 +8,7 @@ import { z } from "zod";
 import { setUserStatus } from "@/server/admin";
 import { NewAnnouncement, createAnnouncement, deleteAnnouncement } from "@/server/announcements";
 import { burnPasswordCheck, verifyPassword } from "@/server/auth/password";
+import { ipFromHeaders } from "@/server/clientIp";
 import { endAdminSession, requireAdminPage, startAdminSession } from "@/server/auth/webSession";
 import { ApiError } from "@/server/http";
 import { actionMeta, logEvent, updateLogSettings } from "@/server/logs";
@@ -20,10 +21,7 @@ import { Login } from "@/server/validation";
 // Server Actions for the admin panel. Every action re-checks the admin
 // role itself — page and layout checks don't protect actions.
 
-async function clientIp() {
-  const list = await headers();
-  return list.get("x-forwarded-for")?.split(",")[0].trim() ?? list.get("x-real-ip") ?? "unknown";
-}
+const clientIp = async () => ipFromHeaders(await headers());
 
 export async function loginAction(_previous, formData) {
   const parsed = Login.safeParse({ email: formData.get("email") ?? "", password: formData.get("password") ?? "" });

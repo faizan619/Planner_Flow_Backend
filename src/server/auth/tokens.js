@@ -29,11 +29,11 @@ export function signAccessToken(user) {
     .sign(secretKey());
 }
 
-// Returns the user id from a valid access token, or null.
+// Returns { userId, issuedAt } (issuedAt in seconds) from a valid access token, or null.
 export async function readAccessToken(token) {
   try {
     const { payload } = await jwtVerify(token, secretKey(), { issuer: ISSUER, algorithms: ["HS256"] });
-    return payload.sub ?? null;
+    return payload.sub ? { userId: payload.sub, issuedAt: payload.iat ?? 0 } : null;
   } catch {
     return null;
   }
@@ -119,12 +119,19 @@ async function revokeFamily(familyId) {
   );
 }
 
-// Signs the user out everywhere (password reset, deactivation).
+// Signs the user out everywhere (password reset, deactivation): refresh
+// tokens are revoked, and access tokens issued until now stop working too
+// (requireUser checks tokens_valid_after), instead of living out their 15 minutes.
 export async function revokeAllForUser(userId) {
   await query(
     "UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL",
     [userId]
   );
+  try {
+    await query("UPDATE users SET tokens_valid_after = CURRENT_TIMESTAMP WHERE id = ?", [userId]);
+  } catch (error) {
+    if (error?.code !== "ER_BAD_FIELD_ERROR") throw error; // column not added yet (npm run db:setup)
+  }
 }
 
 // The user id behind a refresh token that is still valid (not revoked or

@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { text } from "@/server/sanitize";
 
 // zod schemas for request bodies. Route handlers pass these to readJson().
 
@@ -19,7 +20,8 @@ export const code = z
   .trim()
   .regex(/^\d{6}$/, "Enter the 6-digit code");
 
-export const name = z.string().trim().min(1, "Enter your name").max(100);
+// Names go into emails and the admin panel: no control or text-direction characters.
+export const name = text(z.string().trim().min(1, "Enter your name").max(100));
 
 export const timezone = z
   .string()

@@ -60,7 +60,7 @@ export default function Api() {
             [<C key="8">POST /inbox/:id/read</C>, USER, "→ 204; your own announcements only"],
             [<C key="9">POST /inbox/read-all</C>, USER, "→ 204"],
             [<C key="10">DELETE /inbox/:id</C>, USER, "→ 204; removes it from your inbox only"],
-            [<C key="11">GET /health</C>, ANYONE, "→ { ok, db, now }; checks the database connection"],
+            [<C key="11">GET /health</C>, ANYONE, "→ { ok }; checks the database connection (nothing else, since it is public)"],
           ]}
         />
       </Section>

@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { ipFromHeaders } from "@/server/clientIp";
 import { logEvent, requestMeta } from "@/server/logs";
 
 // Shared helpers for /api/v1 route handlers.
@@ -67,16 +68,18 @@ export async function readJson(request, schema) {
   return result.data;
 }
 
-// Client IP for rate limiting. On Vercel, x-forwarded-for is set by the platform.
+// Client IP for rate limiting; see src/server/clientIp.js for which header is trusted.
 export function clientIp(request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return request.headers.get("x-real-ip") ?? "unknown";
+  return ipFromHeaders(request.headers);
 }
 
 // The address the client used to reach this server (for links we hand out).
-// On Vercel and other proxies this comes from the forwarded headers.
+// APP_URL (e.g. https://planner-flow-backend.vercel.app) wins when set, so a
+// request with a forged Host / X-Forwarded-Host header can't make the server
+// hand out links to another site. Without it (local dev), the request's
+// forwarded headers are used.
 export function publicOrigin(request) {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
   const url = new URL(request.url);
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? url.host;
   const proto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");

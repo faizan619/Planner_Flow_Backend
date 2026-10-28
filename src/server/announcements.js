@@ -3,13 +3,14 @@ import { z } from "zod";
 import { query, queryOne, transaction } from "@/server/db";
 import { ApiError } from "@/server/http";
 import { logEvent } from "@/server/logs";
+import { text } from "@/server/sanitize";
 
 // Admin announcements and each user's inbox of them.
 
 export const NewAnnouncement = z
   .object({
-    title: z.string().trim().min(1, "Enter a title").max(120),
-    body: z.string().trim().min(1, "Enter the message").max(2000),
+    title: text(z.string().trim().min(1, "Enter a title").max(120)),
+    body: text(z.string().trim().min(1, "Enter the message").max(2000)),
     audience: z.enum(["all", "selected"]),
     userIds: z.array(z.coerce.number().int().positive()).max(5000).default([]),
   })

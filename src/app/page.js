@@ -10,7 +10,13 @@ export default function Home() {
         This is the Planner Flow server. The Android app uses its API; admins manage users and announcements here.
       </p>
       <div className="flex gap-3">
-        <Link href="/admin" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
+        <Link href="/download" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
+          Get the Android app
+        </Link>
+        <Link
+          href="/admin"
+          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+        >
           Admin panel
         </Link>
       </div>

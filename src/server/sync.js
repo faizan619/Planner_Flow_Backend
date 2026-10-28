@@ -3,6 +3,7 @@ import { z } from "zod";
 import { json, transaction } from "@/server/db";
 import { BOOK_TYPES, READING_STATUSES, readingProblems } from "@/server/books";
 import { decrypt, encrypt } from "@/server/crypto";
+import { sanitizeRichText, text } from "@/server/sanitize";
 import { addDays, isValidDay, todayIn } from "@/server/dates";
 
 // Offline sync for the app's own records (POST /api/v1/sync).
@@ -31,7 +32,7 @@ const ENTITIES = {
     columns: { title: "title", sortOrder: "sort_order", startedOn: "started_on", archivedOn: "archived_on" },
     schema: z.object({
       id: z.uuid(),
-      title: z.string().trim().min(1).max(120),
+      title: text(z.string().trim().min(1).max(120)),
       sortOrder: z.number().int(),
       startedOn: day,
       archivedOn: day.nullable(),
@@ -44,7 +45,7 @@ const ENTITIES = {
     columns: { motivation: "motivation" },
     schema: z.object({
       id: day, // the week's first day
-      motivation: z.string().max(300),
+      motivation: text(z.string().max(300)),
       ...base,
     }),
   },
@@ -62,7 +63,7 @@ const ENTITIES = {
     schema: z.object({
       id: z.uuid(),
       weekStart: day,
-      title: z.string().trim().min(1).max(200),
+      title: text(z.string().trim().min(1).max(200)),
       done: z.boolean(),
       carriedFromId: z.uuid().nullable(),
       carriedToId: z.uuid().nullable(),
@@ -102,10 +103,10 @@ const ENTITIES = {
       .object({
         id: z.uuid(),
         kind: z.enum(["note", "money"]),
-        text: z.string().trim().max(500),
+        text: text(z.string().trim().max(500)),
         remindAt: timestamp.nullable(),
         done: z.boolean(),
-        person: z.string().trim().max(100).nullable(),
+        person: text(z.string().trim().max(100).nullable()),
         amountMinor: z.number().int().positive().max(100_000_000_000).nullable(), // paise
         currency: z.string().regex(/^[A-Z]{3}$/).nullable(),
         direction: z.enum(["i_owe", "owed_to_me"]).nullable(),
@@ -127,10 +128,10 @@ const ENTITIES = {
     columns: { title: "title_enc", body: "body_enc", lessonDate: "lesson_date", tags: "tags" },
     schema: z.object({
       id: z.uuid(),
-      title: z.string().trim().min(1).max(200),
-      body: z.string().max(50000), // HTML from the app's rich text editor
+      title: text(z.string().trim().min(1).max(200)),
+      body: z.string().max(50000).transform(sanitizeRichText), // HTML from the app's editor, reduced to its own tags
       lessonDate: day,
-      tags: z.array(z.string().trim().min(1).max(30)).max(10),
+      tags: z.array(text(z.string().trim().min(1).max(30))).max(10),
       ...base,
     }),
     write: (lesson, userId) => ({
@@ -152,9 +153,9 @@ const ENTITIES = {
     columns: { title: "title", author: "author", genre: "genre" },
     schema: z.object({
       id: z.uuid(),
-      title: z.string().trim().min(1).max(200),
-      author: z.string().trim().max(150),
-      genre: z.string().trim().max(60),
+      title: text(z.string().trim().min(1).max(200)),
+      author: text(z.string().trim().max(150)),
+      genre: text(z.string().trim().max(60)),
       ...base,
     }),
   },

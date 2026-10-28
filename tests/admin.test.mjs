@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { api, sql, startServer, stopServer, verifiedUser } from "./helpers/server.mjs";
+import { PASSWORD, api, sql, startServer, stopServer, verifiedUser } from "./helpers/server.mjs";
 
 before(startServer, { timeout: 240_000 });
 after(stopServer);
@@ -56,16 +56,21 @@ describe("admin users and stats", () => {
     assert.equal(res.body.users[0].password_hash, undefined);
   });
 
-  test("deactivating signs the user out; reactivating lets them back in", async () => {
+  test("deactivating signs the user out; reactivating lets them sign in again", async () => {
     const admin = await adminUser("deactivator");
     const target = await verifiedUser("deactivate-me");
+    await new Promise((resolve) => setTimeout(resolve, 1100)); // token times are whole seconds
     const off = await api("PATCH", `/api/v1/admin/users/${userId(target)}`, { token: admin.accessToken, body: { status: "deactivated" } });
     assert.equal(off.status, 204);
-    assert.equal((await api("GET", "/api/v1/me", { token: target.accessToken })).status, 403);
+    assert.equal((await api("GET", "/api/v1/me", { token: target.accessToken })).status, 401);
     assert.equal((await api("POST", "/api/v1/auth/refresh", { body: { refreshToken: target.refreshToken } })).status, 401);
 
     await api("PATCH", `/api/v1/admin/users/${userId(target)}`, { token: admin.accessToken, body: { status: "active" } });
-    assert.equal((await api("GET", "/api/v1/me", { token: target.accessToken })).status, 200);
+    // Sessions from before the deactivation stay ended; a new sign-in works.
+    assert.equal((await api("GET", "/api/v1/me", { token: target.accessToken })).status, 401);
+    const login = await api("POST", "/api/v1/auth/login", { body: { email: target.email, password: PASSWORD }, ip: target.ip });
+    assert.equal(login.status, 200);
+    assert.equal((await api("GET", "/api/v1/me", { token: login.body.accessToken })).status, 200);
   });
 
   test("an admin can't deactivate themselves; bad input is rejected", async () => {

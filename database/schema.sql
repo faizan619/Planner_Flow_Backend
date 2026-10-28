@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_users_email (email)
 );
 
+-- Access tokens (JWTs) issued before this are refused: set when the user is
+-- signed out everywhere (password reset, deactivation). See src/server/auth/session.js.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tokens_valid_after TIMESTAMP NULL;
+
 
 -- ---------------------------------------------------------------------
 -- 2. refresh_tokens — one row per issued refresh token (only its SHA-256

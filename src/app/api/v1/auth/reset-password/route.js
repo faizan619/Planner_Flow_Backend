@@ -7,10 +7,11 @@ import { revokeAllForUser } from "@/server/auth/tokens";
 import { findUserByEmail } from "@/server/users";
 import { ResetPassword } from "@/server/validation";
 import { logEvent, requestMeta } from "@/server/logs";
+import { idempotent, IDEMPOTENCY_TTL } from "@/server/idempotency";
 
 // POST /api/v1/auth/reset-password — { email, code, password }
 // Sets the new password and signs the account out on every device.
-export const POST = route(async (request) => {
+const handlePost = route(async (request) => {
   await rateLimit(`reset:ip:${clientIp(request)}`, { limit: 20, windowSeconds: 3600 });
   const { email, code, password } = await readJson(request, ResetPassword);
   await rateLimit(`reset:email:${email}`, { limit: 10, windowSeconds: 3600 });
@@ -38,3 +39,6 @@ export const POST = route(async (request) => {
   });
   return ok({ message: "Password updated. Please sign in with your new password." });
 });
+
+// A retry with the same Idempotency-Key gets the same answer instead of running twice.
+export const POST = idempotent(handlePost, { ttlSeconds: IDEMPOTENCY_TTL.default });

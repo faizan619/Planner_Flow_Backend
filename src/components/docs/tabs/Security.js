@@ -11,7 +11,7 @@ export default function Security() {
           rows={[
             ["Stolen database", "Passwords hashed with argon2id; refresh tokens, codes and export links stored only as hashes; journal text encrypted", <C key="1">auth/*, crypto.js</C>],
             ["Guessing passwords or codes", "Rate limits per IP and per email; codes expire in 15 min and die after 5 wrong tries", <C key="2">rateLimit.js, codes.js</C>],
-            ["Finding which emails have accounts", "Same error for unknown email and wrong password; forgot-password always answers the same; dummy hash keeps timing equal", <C key="3">auth routes</C>],
+            ["Finding which emails have accounts", "Same error for unknown email and wrong password; dummy hash keeps timing equal. Forgot-password does say when an email has no account (so the app can offer sign-up), so it is limited to 5 lookups an hour and 20 a day per IP", <C key="3">auth routes</C>],
             ["Someone else’s data (IDOR)", "Every query filters by the signed-in user; synced tables’ keys start with user_id; marks/readings must point at your own habit/book", <C key="4">sync.js</C>],
             ["Stolen sign-in", "Short access tokens; refresh tokens rotate and reuse revokes the whole family; password reset signs out everywhere", <C key="5">tokens.js</C>],
             ["Deactivated / demoted users", "User and role reloaded on every request and every admin page/action", <C key="6">session.js, webSession.js</C>],

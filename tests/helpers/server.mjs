@@ -106,8 +106,8 @@ export async function sql(statement, params = []) {
 
 // Calls the API. Each call can pretend to come from its own IP so the
 // rate limiter doesn't spill over between tests.
-export async function api(method, pathname, { body, token, ip = "10.0.0.1" } = {}) {
-  const headers = { "x-forwarded-for": ip };
+export async function api(method, pathname, { body, token, ip = "10.0.0.1", headers: extraHeaders = {} } = {}) {
+  const headers = { "x-forwarded-for": ip, ...extraHeaders };
   if (body !== undefined) headers["content-type"] = "application/json";
   if (token) headers.authorization = `Bearer ${token}`;
   const response = await fetch(`${BASE_URL}${pathname}`, {

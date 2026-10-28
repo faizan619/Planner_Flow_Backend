@@ -160,6 +160,6 @@ describe("activity logs", () => {
     assert.equal(res.status, 200);
     const body = await res.json();
     assert.equal(body.ok, true);
-    assert.deepEqual(Object.keys(body.removed).sort(), ["emailCodes", "exportTokens", "logs", "rateLimits", "refreshTokens"]);
+    assert.deepEqual(Object.keys(body.removed).sort(), ["emailCodes", "exportTokens", "idempotencyKeys", "logs", "rateLimits", "refreshTokens"]);
   });
 });

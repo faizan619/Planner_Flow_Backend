@@ -4,10 +4,11 @@ import { rotateRefreshToken } from "@/server/auth/tokens";
 import { findUserById, publicUser } from "@/server/users";
 import { logEvent, requestMeta } from "@/server/logs";
 import { RefreshToken } from "@/server/validation";
+import { idempotent, IDEMPOTENCY_TTL } from "@/server/idempotency";
 
 // POST /api/v1/auth/refresh — { refreshToken } → a new access + refresh token.
 // The old refresh token stops working; reusing it signs that device out.
-export const POST = route(async (request) => {
+const handlePost = route(async (request) => {
   await rateLimit(`refresh:ip:${clientIp(request)}`, { limit: 60, windowSeconds: 60 });
   const { refreshToken } = await readJson(request, RefreshToken);
 
@@ -22,3 +23,7 @@ export const POST = route(async (request) => {
   if (!result) throw new ApiError(401, "INVALID_REFRESH_TOKEN", "Please sign in again");
   return ok({ user: publicUser(result.user), ...result.tokens });
 });
+
+// A retry with the same Idempotency-Key gets the same answer (the answer holds
+// sign-in tokens, so it is kept only briefly).
+export const POST = idempotent(handlePost, { ttlSeconds: IDEMPOTENCY_TTL.tokens });

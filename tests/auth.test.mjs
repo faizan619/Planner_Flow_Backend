@@ -204,9 +204,31 @@ describe("password reset", () => {
     assert.equal(newLogin.status, 200);
   });
 
-  test("forgot-password doesn't reveal whether an email exists", async () => {
+  test("forgot-password says when no account has that email, so the app can offer sign-up", async () => {
     const res = await api("POST", "/api/v1/auth/forgot-password", { body: { email: uniqueEmail("nobody") }, ip: uniqueIp() });
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 404);
+    assert.equal(res.body.error.code, "ACCOUNT_NOT_FOUND");
+  });
+
+  test("reset codes go out at most once a minute", async () => {
+    const { email } = await verifiedUser("cooldown");
+    const first = await api("POST", "/api/v1/auth/forgot-password", { body: { email }, ip: uniqueIp() });
+    assert.equal(first.status, 200);
+    const again = await api("POST", "/api/v1/auth/forgot-password", { body: { email }, ip: uniqueIp() });
+    assert.equal(again.status, 429);
+    assert.equal(again.body.error.code, "CODE_COOLDOWN");
+    assert.ok(again.body.error.retryAfter > 0 && again.body.error.retryAfter <= 60);
+  });
+
+  test("one device can only look up 5 emails an hour", async () => {
+    const ip = uniqueIp();
+    for (let i = 0; i < 5; i += 1) {
+      const res = await api("POST", "/api/v1/auth/forgot-password", { body: { email: uniqueEmail(`scan${i}`) }, ip });
+      assert.equal(res.status, 404);
+    }
+    const blocked = await api("POST", "/api/v1/auth/forgot-password", { body: { email: uniqueEmail("scan") }, ip });
+    assert.equal(blocked.status, 429);
+    assert.equal(blocked.body.error.code, "RATE_LIMITED");
   });
 });
 

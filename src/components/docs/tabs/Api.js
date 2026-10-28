@@ -33,11 +33,11 @@ export default function Api() {
           rows={[
             [<C key="1">POST /auth/signup</C>, ANYONE, "{ name, email, password, timezone? } → { email, verificationRequired }", "5 / hour per IP"],
             [<C key="2">POST /auth/verify-email</C>, ANYONE, "{ email, code } → { user, accessToken, refreshToken, accessTokenExpiresIn }", "30 / 15 min per IP, 10 per email"],
-            [<C key="3">POST /auth/resend-code</C>, ANYONE, "{ email } → { message } (same answer whether or not the email exists)", "3 / 15 min per email"],
+            [<C key="3">POST /auth/resend-code</C>, ANYONE, "{ email } → { message } (same answer whether or not the email exists); one code a minute", "3 / 15 min per email"],
             [<C key="4">POST /auth/login</C>, ANYONE, "{ email, password } → { user, accessToken, refreshToken, … }", "20 / 15 min per IP, 5 per email"],
             [<C key="5">POST /auth/refresh</C>, ANYONE, "{ refreshToken } → new { user, accessToken, refreshToken }", "60 / min per IP"],
             [<C key="6">POST /auth/logout</C>, ANYONE, "{ refreshToken } → 204", ""],
-            [<C key="7">POST /auth/forgot-password</C>, ANYONE, "{ email } → { message } (same answer always)", "3 / hour per email"],
+            [<C key="7">POST /auth/forgot-password</C>, ANYONE, "{ email } → { message }; 404 ACCOUNT_NOT_FOUND for an unknown email (the app offers sign-up); one code a minute", "5 / hour and 20 / day per IP, 3 / hour per email"],
             [<C key="8">POST /auth/reset-password</C>, ANYONE, "{ email, code, password } → { message }; signs out every device", "10 / hour per email"],
             [<C key="9">GET /me</C>, USER, "→ { user }", ""],
             [<C key="10">PATCH /me</C>, USER, "any of { name, timezone, weekStartDay (1–7), currency } → { user }", ""],

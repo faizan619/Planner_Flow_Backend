@@ -12,7 +12,7 @@ const SERVER = [
     "/me needs a valid access token",
     "Refresh rotates the token; reusing an old one revokes the whole family",
     "Logout revokes the refresh token; a deactivated account is locked out immediately",
-    "Reset code sets a new password and signs out other devices; forgot-password doesn’t reveal accounts",
+    "Reset code sets a new password and signs out other devices; forgot-password reports unknown emails, sends one code a minute and limits lookups per IP",
     "PATCH /me validates and can’t change role or email; DELETE /me needs the password and removes everything",
   ]],
   ["Sync (sync.test.mjs)", [

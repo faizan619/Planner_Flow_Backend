@@ -6,9 +6,10 @@ import { issueTokens } from "@/server/auth/tokens";
 import { findUserByEmail, publicUser } from "@/server/users";
 import { VerifyEmail } from "@/server/validation";
 import { logEvent, requestMeta } from "@/server/logs";
+import { idempotent, IDEMPOTENCY_TTL } from "@/server/idempotency";
 
 // POST /api/v1/auth/verify-email — { email, code } → signs the user in.
-export const POST = route(async (request) => {
+const handlePost = route(async (request) => {
   await rateLimit(`verify:ip:${clientIp(request)}`, { limit: 30, windowSeconds: 900 });
   const { email, code } = await readJson(request, VerifyEmail);
   await rateLimit(`verify:email:${email}`, { limit: 10, windowSeconds: 900 });
@@ -31,3 +32,7 @@ export const POST = route(async (request) => {
   logEvent(requestMeta(request), { category: "security", event: "email_verified", userId: user.id, email: user.email });
   return ok({ user: publicUser({ ...user, emailVerifiedAt: new Date() }), ...tokens });
 });
+
+// A retry with the same Idempotency-Key gets the same answer (the answer holds
+// sign-in tokens, so it is kept only briefly).
+export const POST = idempotent(handlePost, { ttlSeconds: IDEMPOTENCY_TTL.tokens });

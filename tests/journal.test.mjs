@@ -103,7 +103,7 @@ describe("life lessons", () => {
     const res = await sync(accessToken, 0, {
       lessons: [
         lesson({ title: "" }),
-        lesson({ body: "x".repeat(5001) }),
+        lesson({ body: "x".repeat(50001) }), // over the 50,000 limit (formatted notes are HTML)
         lesson({ tags: Array.from({ length: 11 }, (_, i) => `t${i}`) }),
         lesson({ tags: ["x".repeat(31)] }),
         lesson({ lessonDate: "20-10-2026" }),

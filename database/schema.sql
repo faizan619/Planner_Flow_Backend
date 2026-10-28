@@ -420,3 +420,24 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 -- A user removed this announcement from their own inbox. The row stays, so
 -- the admin's recipient and read counts don't change.
 ALTER TABLE announcement_recipients ADD COLUMN IF NOT EXISTS dismissed_at TIMESTAMP NULL;
+
+
+-- ---------------------------------------------------------------------
+-- 20. idempotency_keys — answers to requests sent with an Idempotency-Key
+--     header (src/server/idempotency.js), so a retried request gets the first
+--     answer instead of running twice. id is a SHA-256 of method, path and
+--     key; request_hash of the caller and body. response_body is encrypted
+--     (it can hold sign-in tokens). Deleted after expires_at by the daily
+--     cleanup.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+  id               CHAR(64)          NOT NULL,
+  request_hash     CHAR(64)          NOT NULL,
+  status           ENUM('pending', 'done') NOT NULL DEFAULT 'pending',
+  response_status  SMALLINT UNSIGNED NULL,
+  response_body    MEDIUMTEXT        NULL,
+  expires_at       TIMESTAMP         NOT NULL,
+  created_at       TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_idempotency_keys_expires (expires_at)
+);

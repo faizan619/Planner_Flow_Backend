@@ -11,18 +11,18 @@
 
 const REPO = "https://github.com/faizan619/Planner_Flow_Backend";
 
-const version = "1.0.0";
-const versionCode = 7;
+const version = "1.0.5";
+const versionCode = 8;
 const fileName = `planner-flow-${version}-${versionCode}.apk`;
 
 export const release = {
   version,
   versionCode,
   fileName,
-  releasedOn: "2026-10-28",
-  sizeBytes: 110_321_861,
+  releasedOn: "2026-10-29",
+  sizeBytes: 110_346_449,
   // SHA-256 of the APK file, so people can check the download is intact.
-  sha256: "e385988fb2cd5ce5f8298ea66b94501abba1827170f69b1b09e28ad8bb06c3eb",
+  sha256: "513564964873a107f23fb7182077db976349982a33a4601a44feaa7c63417bff",
   // SHA-256 of the signing certificate. The same for every version: Android
   // only installs an update signed with the same key.
   certificateSha256: "2d719fb45b33367015d3a1dfa2f0739b23992cd6d331a21eb989d48bead07a0a",
@@ -30,11 +30,13 @@ export const release = {
   downloadUrl: process.env.APK_DOWNLOAD_URL || `${REPO}/releases/download/v${version}-${versionCode}/${fileName}`,
   releasePage: `${REPO}/releases/tag/v${version}-${versionCode}`,
   whatsNew: [
+    "Give each habit its own daily reminder: a notification or an alarm, at the time you choose",
+    "A friendly welcome and a quick tour of the app for new users (replay it from Settings)",
     "Note reminders ring like a real alarm, with your choice of tone, or your own",
-    "Write lesson notes with bold, headings, lists and a distraction-free full screen",
+    "Write lesson notes with bold, headings, lists and a distraction-free full screen, and read them in a clean view",
     "Unsaved writing is kept as a draft if the app closes",
     "Undo after deleting a habit, task, book or lesson",
-    "A cleaner dashboard and smoother loading",
+    "Quick-add buttons on empty lists, a cleaner dashboard and smoother loading",
     "Stronger security: tighter sign-in protection and encrypted connections only",
   ],
 };

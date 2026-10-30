@@ -11,32 +11,34 @@
 
 const REPO = "https://github.com/faizan619/Planner_Flow_Backend";
 
-const version = "1.0.5";
-const versionCode = 8;
+const version = "1.0.7";
+const versionCode = 10;
 const fileName = `planner-flow-${version}-${versionCode}.apk`;
 
 export const release = {
   version,
   versionCode,
   fileName,
-  releasedOn: "2026-10-29",
-  sizeBytes: 110_346_449,
+  releasedOn: "2026-10-30",
+  sizeBytes: 110_459_845,
   // SHA-256 of the APK file, so people can check the download is intact.
-  sha256: "513564964873a107f23fb7182077db976349982a33a4601a44feaa7c63417bff",
+  sha256: "ca6b98d0028aaac2f9fc015f722be8e61bba125e245efd2667c1b1cf22e96837",
   // SHA-256 of the signing certificate. The same for every version: Android
   // only installs an update signed with the same key.
   certificateSha256: "2d719fb45b33367015d3a1dfa2f0739b23992cd6d331a21eb989d48bead07a0a",
   minAndroid: "Android 7.0 or newer",
+  // The app (1.0.6 and later) asks people to update when a newer versionCode
+  // is out. Versions below this one must update: no "Later".
+  //   minor update (optional): leave this as it is
+  //   major update (required): set it to the new versionCode
+  // Never lower it.
+  minimumVersionCode: 10, // 1.0.7: a major update, required
   downloadUrl: process.env.APK_DOWNLOAD_URL || `${REPO}/releases/download/v${version}-${versionCode}/${fileName}`,
   releasePage: `${REPO}/releases/tag/v${version}-${versionCode}`,
   whatsNew: [
-    "Give each habit its own daily reminder: a notification or an alarm, at the time you choose",
-    "A friendly welcome and a quick tour of the app for new users (replay it from Settings)",
-    "Note reminders ring like a real alarm, with your choice of tone, or your own",
-    "Write lesson notes with bold, headings, lists and a distraction-free full screen, and read them in a clean view",
-    "Unsaved writing is kept as a draft if the app closes",
-    "Undo after deleting a habit, task, book or lesson",
-    "Quick-add buttons on empty lists, a cleaner dashboard and smoother loading",
-    "Stronger security: tighter sign-in protection and encrypted connections only",
+    "Reminders for weekly tasks: a notification or an alarm, every day or only on the days you pick, until the task is done",
+    "Tick a task off right from its alarm with the new Done button",
+    "When a new week starts, choose which of last week’s unfinished tasks to carry over (their reminders come along)",
+    "Faster, smoother screens, and long lists of books, journal entries and done notes load in steps",
   ],
 };

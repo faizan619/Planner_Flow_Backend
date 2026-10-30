@@ -23,3 +23,17 @@ describe("download page", () => {
     assert.match(html, /href="\/download"/);
   });
 });
+
+describe("latest app version", () => {
+  test("tells the app the newest version and where to get it, without sign-in", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/app/latest`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    const { release } = await import("../src/config/release.js");
+    assert.equal(body.version, release.version);
+    assert.equal(body.versionCode, release.versionCode);
+    assert.equal(body.minimumVersionCode, release.minimumVersionCode);
+    assert.deepEqual(body.whatsNew, release.whatsNew);
+    assert.match(body.downloadPage, /\/download$/);
+  });
+});

@@ -11,8 +11,8 @@
 
 const REPO = "https://github.com/faizan619/Planner_Flow_Backend";
 
-const version = "1.0.6";
-const versionCode = 9;
+const version = "1.0.8";
+const versionCode = 11;
 const fileName = `planner-flow-${version}-${versionCode}.apk`;
 
 export const release = {
@@ -20,9 +20,9 @@ export const release = {
   versionCode,
   fileName,
   releasedOn: "2026-10-30",
-  sizeBytes: 110_370_137,
+  sizeBytes: 110_385_481,
   // SHA-256 of the APK file, so people can check the download is intact.
-  sha256: "5983b94ac6bedf50b5d6dfbabdfa6aa988683945867fbc4c0a1105d257e4eb50",
+  sha256: "534d741bf163b968be9b3a219e4eb7bfdf2bd8e08782bdc5e1c08272cd669b8c",
   // SHA-256 of the signing certificate. The same for every version: Android
   // only installs an update signed with the same key.
   certificateSha256: "2d719fb45b33367015d3a1dfa2f0739b23992cd6d331a21eb989d48bead07a0a",
@@ -32,12 +32,14 @@ export const release = {
   //   minor update (optional): leave this as it is
   //   major update (required): set it to the new versionCode
   // Never lower it (exception: 1.0.7 was withdrawn on 2026-10-30, back to 1.0.6, optional).
-  minimumVersionCode: 0,
+  minimumVersionCode: 11, // 1.0.8: a major update, required
   downloadUrl: process.env.APK_DOWNLOAD_URL || `${REPO}/releases/download/v${version}-${versionCode}/${fileName}`,
   releasePage: `${REPO}/releases/tag/v${version}-${versionCode}`,
   whatsNew: [
-    "The app now tells you when a new version is out, with a button that takes you straight to the download",
-    "Settings → About shows your version and has a “Check for updates” button",
-    "Under-the-hood fixes and updates for a smoother, more reliable app",
+    "Reminders for weekly tasks: a notification or an alarm, every day or only on the days you pick, until the task is done",
+    "Tick a task off right from its alarm with the new Done button",
+    "When a new week starts, choose which of last week’s unfinished tasks to carry over (their reminders come along)",
+    "Fixes the app closing on its own when a reminder went off while it was closed",
+    "Long lists of books, journal entries and done notes load in steps, so screens stay quick",
   ],
 };

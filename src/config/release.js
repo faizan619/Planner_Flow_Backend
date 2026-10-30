@@ -11,8 +11,8 @@
 
 const REPO = "https://github.com/faizan619/Planner_Flow_Backend";
 
-const version = "1.0.7";
-const versionCode = 10;
+const version = "1.0.6";
+const versionCode = 9;
 const fileName = `planner-flow-${version}-${versionCode}.apk`;
 
 export const release = {
@@ -20,9 +20,9 @@ export const release = {
   versionCode,
   fileName,
   releasedOn: "2026-10-30",
-  sizeBytes: 110_459_845,
+  sizeBytes: 110_370_137,
   // SHA-256 of the APK file, so people can check the download is intact.
-  sha256: "ca6b98d0028aaac2f9fc015f722be8e61bba125e245efd2667c1b1cf22e96837",
+  sha256: "5983b94ac6bedf50b5d6dfbabdfa6aa988683945867fbc4c0a1105d257e4eb50",
   // SHA-256 of the signing certificate. The same for every version: Android
   // only installs an update signed with the same key.
   certificateSha256: "2d719fb45b33367015d3a1dfa2f0739b23992cd6d331a21eb989d48bead07a0a",
@@ -31,14 +31,13 @@ export const release = {
   // is out. Versions below this one must update: no "Later".
   //   minor update (optional): leave this as it is
   //   major update (required): set it to the new versionCode
-  // Never lower it.
-  minimumVersionCode: 10, // 1.0.7: a major update, required
+  // Never lower it (exception: 1.0.7 was withdrawn on 2026-10-30, back to 1.0.6, optional).
+  minimumVersionCode: 0,
   downloadUrl: process.env.APK_DOWNLOAD_URL || `${REPO}/releases/download/v${version}-${versionCode}/${fileName}`,
   releasePage: `${REPO}/releases/tag/v${version}-${versionCode}`,
   whatsNew: [
-    "Reminders for weekly tasks: a notification or an alarm, every day or only on the days you pick, until the task is done",
-    "Tick a task off right from its alarm with the new Done button",
-    "When a new week starts, choose which of last week’s unfinished tasks to carry over (their reminders come along)",
-    "Faster, smoother screens, and long lists of books, journal entries and done notes load in steps",
+    "The app now tells you when a new version is out, with a button that takes you straight to the download",
+    "Settings → About shows your version and has a “Check for updates” button",
+    "Under-the-hood fixes and updates for a smoother, more reliable app",
   ],
 };

@@ -445,3 +445,54 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
   PRIMARY KEY (id),
   KEY idx_idempotency_keys_expires (expires_at)
 );
+
+
+-- ---------------------------------------------------------------------
+-- 21. transactions — money spent and money received (the app's Money →
+--     Spent view). kind decides what category means:
+--       expense  category = what it was for (food, rent, …)
+--       income   category = where it came from (salary, freelance, …)
+--     Categories are short slugs; the app holds their names and icons.
+--     method is how it was paid or received (optional). owed_id links an
+--     expense split with someone to the reminders row (kind = money) that
+--     records their share.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS transactions (
+  user_id       BIGINT UNSIGNED NOT NULL,
+  id            CHAR(36)        NOT NULL,
+  kind          ENUM('expense', 'income') NOT NULL,
+  amount_minor  BIGINT UNSIGNED NOT NULL,
+  currency      CHAR(3)         NOT NULL,
+  category      VARCHAR(30)     NOT NULL,
+  method        ENUM('cash', 'upi', 'card', 'bank', 'other') NULL,
+  tx_date       DATE            NOT NULL,
+  note          VARCHAR(300)    NOT NULL DEFAULT '',
+  owed_id       CHAR(36)        NULL,
+  updated_at    BIGINT UNSIGNED NOT NULL,
+  deleted_at    BIGINT UNSIGNED NULL,
+  server_seq    BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (user_id, id),
+  KEY idx_transactions_seq (user_id, server_seq),
+  KEY idx_transactions_date (user_id, tx_date),
+  CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+
+-- ---------------------------------------------------------------------
+-- 22. budgets — a monthly spending limit, every month, overall (category
+--     'all') or for one expense category, in one currency.
+--     id = '<currency>:<category>', e.g. 'INR:food'.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS budgets (
+  user_id       BIGINT UNSIGNED NOT NULL,
+  id            VARCHAR(40)     NOT NULL,
+  category      VARCHAR(30)     NOT NULL,
+  currency      CHAR(3)         NOT NULL,
+  amount_minor  BIGINT UNSIGNED NOT NULL,
+  updated_at    BIGINT UNSIGNED NOT NULL,
+  deleted_at    BIGINT UNSIGNED NULL,
+  server_seq    BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (user_id, id),
+  KEY idx_budgets_seq (user_id, server_seq),
+  CONSTRAINT fk_budgets_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);

@@ -92,6 +92,8 @@ describe("export", () => {
       "Motivation",
       "Notes",
       "Money",
+      "Spending",
+      "Budgets",
       "Life lessons",
       "Inbox",
     ]);

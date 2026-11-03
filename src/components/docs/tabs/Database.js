@@ -18,6 +18,7 @@ export default function Database() {
             [<C key="5">habits · habit_marks</C>, "Daily habits; done / missed per day", "started_on, archived_on · habit_id, mark_date, status"],
             [<C key="6">weeks · weekly_tasks</C>, "Motivation per week; weekly tasks", "start_date, motivation · week_start, done, carried_from_id, carried_to_id"],
             [<C key="7">reminders</C>, "Notes and money", "kind, text, remind_at, done, person, amount_minor (paise), currency, direction"],
+            [<C key="7b">transactions · budgets</C>, "Money spent and received; monthly budgets", "kind, amount_minor, currency, category, method, tx_date, note, owed_id · id (currency:category), amount_minor"],
             [<C key="8">lessons</C>, "Journal", "title_enc, body_enc (encrypted), lesson_date, tags (JSON)"],
             [<C key="9">books · book_readings · reading_goals</C>, "Book tracker", "title, author, genre · read_number, type, status, start/end, rating · year, target"],
             [<C key="10">announcements · announcement_recipients</C>, "Announcements; the inbox", "audience · read_at, dismissed_at, push_status"],

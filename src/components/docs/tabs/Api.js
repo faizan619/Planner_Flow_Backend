@@ -50,7 +50,7 @@ export default function Api() {
         <Table
           head={["Method and address", "Who", "Body → answer"]}
           rows={[
-            [<C key="1">POST /sync</C>, USER, "{ cursor, changes: { habits, habitMarks, weeks, weeklyTasks, reminders, lessons, books, bookReadings, readingGoals } } → { cursor, hasMore, fullResync, changes, rejected } (max 500 records per type)"],
+            [<C key="1">POST /sync</C>, USER, "{ cursor, changes: { habits, habitMarks, weeks, weeklyTasks, reminders, lessons, books, bookReadings, readingGoals, transactions, budgets } } → { cursor, hasMore, fullResync, changes, rejected } (max 500 records per type)"],
             [<C key="2">POST /books/import/preview</C>, USER, "multipart file (.xlsx / .csv, ≤ 2 MB) → { columns, rows: [{ row, ok, data, errors, warnings }], summary }; saves nothing"],
             [<C key="3">POST /export/link</C>, USER, "{ format: json | xlsx } → { url, expiresInMinutes } (10 / hour)"],
             [<C key="4">GET /export/download?token=</C>, "Link holder (once, 10 min)", "→ the file as an attachment; 410 if used or expired"],

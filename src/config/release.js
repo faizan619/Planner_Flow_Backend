@@ -11,18 +11,18 @@
 
 const REPO = "https://github.com/faizan619/Planner_Flow_Backend";
 
-const version = "1.0.8";
-const versionCode = 11;
+const version = "1.0.9";
+const versionCode = 12;
 const fileName = `planner-flow-${version}-${versionCode}.apk`;
 
 export const release = {
   version,
   versionCode,
   fileName,
-  releasedOn: "2026-10-30",
-  sizeBytes: 110_385_481,
+  releasedOn: "2026-11-03",
+  sizeBytes: 110_464_661,
   // SHA-256 of the APK file, so people can check the download is intact.
-  sha256: "534d741bf163b968be9b3a219e4eb7bfdf2bd8e08782bdc5e1c08272cd669b8c",
+  sha256: "71cc48efa88d7dbe125c84e02617dd95c0412b34aa21005584a3decf48e92c7a",
   // SHA-256 of the signing certificate. The same for every version: Android
   // only installs an update signed with the same key.
   certificateSha256: "2d719fb45b33367015d3a1dfa2f0739b23992cd6d331a21eb989d48bead07a0a",
@@ -32,14 +32,14 @@ export const release = {
   //   minor update (optional): leave this as it is
   //   major update (required): set it to the new versionCode
   // Never lower it (exception: 1.0.7 was withdrawn on 2026-10-30, back to 1.0.6, optional).
-  minimumVersionCode: 11, // 1.0.8: a major update, required
+  minimumVersionCode: 12, // 1.0.9: a major update, required
   downloadUrl: process.env.APK_DOWNLOAD_URL || `${REPO}/releases/download/v${version}-${versionCode}/${fileName}`,
   releasePage: `${REPO}/releases/tag/v${version}-${versionCode}`,
   whatsNew: [
-    "Reminders for weekly tasks: a notification or an alarm, every day or only on the days you pick, until the task is done",
-    "Tick a task off right from its alarm with the new Done button",
-    "When a new week starts, choose which of last week’s unfinished tasks to carry over (their reminders come along)",
-    "Fixes the app closing on its own when a reminder went off while it was closed",
-    "Long lists of books, journal entries and done notes load in steps, so screens stay quick",
+    "Track your money: add expenses and income, see what came in, what went out and what’s left each month",
+    "Monthly budgets with a heads-up at 80%, a yearly report, search, and a tap to see each category’s entries",
+    "Split a bill with a friend: your share counts as spending, theirs goes to Lent & borrowed",
+    "Forms now move above the keyboard, so fields and Save buttons are never hidden",
+    "Books: mark a book finished in one tap from its page, and see your rating in the Done list",
   ],
 };

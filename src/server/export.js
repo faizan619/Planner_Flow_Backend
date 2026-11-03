@@ -44,7 +44,7 @@ const bool = (value) => (value === null ? null : Boolean(value));
 
 export async function collectUserData(user) {
   const id = user.id;
-  const [habits, habitMarks, weeks, weeklyTasks, reminders, lessons, books, bookReadings, readingGoals, inbox] = await Promise.all([
+  const [habits, habitMarks, weeks, weeklyTasks, reminders, lessons, books, bookReadings, readingGoals, inbox, transactions, budgets] = await Promise.all([
     query(`SELECT id, title, sort_order AS sortOrder, started_on AS startedOn, archived_on AS archivedOn FROM habits WHERE user_id = ? AND ${live} ORDER BY sort_order`, [id]),
     query(`SELECT habit_id AS habitId, mark_date AS date, status FROM habit_marks WHERE user_id = ? AND ${live} ORDER BY mark_date`, [id]),
     query(`SELECT start_date AS weekStart, motivation FROM weeks WHERE user_id = ? AND ${live} ORDER BY start_date`, [id]),
@@ -72,6 +72,12 @@ export async function collectUserData(user) {
        WHERE r.user_id = ? ORDER BY a.created_at`,
       [id]
     ),
+    query(
+      `SELECT id, kind, amount_minor AS amountMinor, currency, category, method, tx_date AS date, note, owed_id AS owedId
+       FROM transactions WHERE user_id = ? AND ${live} ORDER BY tx_date, updated_at`,
+      [id]
+    ),
+    query(`SELECT category, currency, amount_minor AS amountMinor FROM budgets WHERE user_id = ? AND ${live} ORDER BY currency, category`, [id]),
   ]);
 
   return {
@@ -97,8 +103,14 @@ export async function collectUserData(user) {
     bookReadings: bookReadings.map((r) => ({ ...r, rating: r.rating === null ? null : Number(r.rating) })),
     readingGoals,
     inbox,
+    transactions: transactions.map((t) => ({ ...t, amountMinor: Number(t.amountMinor) })),
+    budgets: budgets.map((b) => ({ ...b, amountMinor: Number(b.amountMinor) })),
   };
 }
+
+// Category slugs from the app → readable names ("eating_out" → "Eating out").
+const categoryName = (slug) => (slug === "all" ? "Overall" : `${slug[0].toUpperCase()}${slug.slice(1).replace(/_/g, " ")}`);
+const METHOD_LABELS = { cash: "Cash", upi: "UPI", card: "Card", bank: "Bank", other: "Other" };
 
 // ---- Excel ------------------------------------------------------------------
 
@@ -211,6 +223,26 @@ export async function buildWorkbook(data) {
         text: r.text,
         settled: r.done ? "Yes" : "No",
       }))
+  );
+  addSheet(
+    workbook,
+    "Spending",
+    [["Date", "date", 12, DATE], ["Type", "kind", 10], ["Category", "category", 18], ["Amount", "amount", 12, "#,##0.00"], ["Currency", "currency", 9], ["Paid by", "method", 10], ["Note", "note", 40]],
+    data.transactions.map((t) => ({
+      date: excelDate(t.date),
+      kind: t.kind === "income" ? "Income" : "Expense",
+      category: categoryName(t.category),
+      amount: t.amountMinor / 100,
+      currency: t.currency,
+      method: METHOD_LABELS[t.method] ?? "",
+      note: t.note,
+    }))
+  );
+  addSheet(
+    workbook,
+    "Budgets",
+    [["Category", "category", 18], ["Monthly limit", "amount", 14, "#,##0.00"], ["Currency", "currency", 9]],
+    data.budgets.map((b) => ({ category: categoryName(b.category), amount: b.amountMinor / 100, currency: b.currency }))
   );
   addSheet(
     workbook,

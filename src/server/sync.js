@@ -19,6 +19,11 @@ import { addDays, isValidDay, todayIn } from "@/server/dates";
 const day = z.string().refine(isValidDay, "Use a YYYY-MM-DD date");
 const timestamp = z.number().int().nonnegative().max(8_000_000_000_000);
 const base = { updatedAt: timestamp, deletedAt: timestamp.nullable() };
+const amount = z.number().int().positive().max(100_000_000_000); // minor units (paise)
+const currency = z.string().regex(/^[A-Z]{3}$/);
+// Expense categories and income sources: the app's own list ("food",
+// "salary", …), checked by shape so new ones don't need a server change.
+const categorySlug = z.string().regex(/^[a-z][a-z0-9_]{0,29}$/, "Unknown category");
 
 // Each entity: its table, key column, wire fields → columns, and zod schema.
 // Optional `write(record, userId)` / `read(row, userId)` convert between the
@@ -107,8 +112,8 @@ const ENTITIES = {
         remindAt: timestamp.nullable(),
         done: z.boolean(),
         person: text(z.string().trim().max(100).nullable()),
-        amountMinor: z.number().int().positive().max(100_000_000_000).nullable(), // paise
-        currency: z.string().regex(/^[A-Z]{3}$/).nullable(),
+        amountMinor: amount.nullable(),
+        currency: currency.nullable(),
         direction: z.enum(["i_owe", "owed_to_me"]).nullable(),
         ...base,
       })
@@ -198,6 +203,49 @@ const ENTITIES = {
       target: z.number().int().min(1).max(1000),
       ...base,
     }),
+  },
+  // After reminders: an expense split with someone may link to a money
+  // entry sent in the same sync.
+  transactions: {
+    table: "transactions",
+    key: "id",
+    columns: {
+      kind: "kind",
+      amountMinor: "amount_minor",
+      currency: "currency",
+      category: "category",
+      method: "method",
+      date: "tx_date",
+      note: "note",
+      owedId: "owed_id",
+    },
+    schema: z.object({
+      id: z.uuid(),
+      kind: z.enum(["expense", "income"]),
+      amountMinor: amount,
+      currency,
+      category: categorySlug,
+      method: z.enum(["cash", "upi", "card", "bank", "other"]).nullable(),
+      date: day,
+      note: text(z.string().trim().max(300)),
+      owedId: z.uuid().nullable(),
+      ...base,
+    }),
+    owner: { field: "owedId", table: "reminders", message: "Unknown money entry" },
+  },
+  budgets: {
+    table: "budgets",
+    key: "id",
+    columns: { category: "category", currency: "currency", amountMinor: "amount_minor" },
+    schema: z
+      .object({
+        id: z.string().max(40), // "<currency>:<category>"
+        category: z.union([z.literal("all"), categorySlug]),
+        currency,
+        amountMinor: amount,
+        ...base,
+      })
+      .refine((budget) => budget.id === `${budget.currency}:${budget.category}`, "id must be <currency>:<category>"),
   },
 };
 
@@ -340,14 +388,15 @@ export async function sync(user, { cursor, changes }) {
   });
 }
 
-// A child record (mark, reading) must point at one of the user's own parent
-// records (habit, book) — already stored or arriving in this same sync.
+// A child record (mark, reading, split expense) must point at one of the
+// user's own parent records (habit, book, money entry) — already stored or
+// arriving in this same sync. An optional link left empty is fine.
 async function rejectUnowned(q, userId, type, owner, records, rejected) {
-  const parentIds = [...new Set(records.map((record) => record[owner.field]))];
-  const owned = await q(`SELECT id FROM ${owner.table} WHERE user_id = ? AND id IN (?)`, [userId, parentIds]);
+  const parentIds = [...new Set(records.map((record) => record[owner.field]).filter(Boolean))];
+  const owned = parentIds.length ? await q(`SELECT id FROM ${owner.table} WHERE user_id = ? AND id IN (?)`, [userId, parentIds]) : [];
   const ownedIds = new Set(owned.map((row) => row.id));
   for (const record of records) {
-    if (record.rejected || ownedIds.has(record[owner.field])) continue;
+    if (record.rejected || record[owner.field] === null || ownedIds.has(record[owner.field])) continue;
     record.rejected = true;
     rejected.push({ type, id: record.id, reason: owner.message });
   }

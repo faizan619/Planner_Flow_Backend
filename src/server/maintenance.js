@@ -32,5 +32,6 @@ export async function cleanup() {
   await run("exportTokens", "DELETE FROM export_tokens WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL 1 DAY");
   await run("rateLimits", "DELETE FROM rate_limits WHERE window_start < CURRENT_TIMESTAMP - INTERVAL 1 DAY");
   await run("idempotencyKeys", "DELETE FROM idempotency_keys WHERE expires_at < CURRENT_TIMESTAMP");
+  await run("crashReports", "DELETE FROM crash_reports WHERE last_seen_at < CURRENT_TIMESTAMP - INTERVAL 90 DAY");
   return removed;
 }

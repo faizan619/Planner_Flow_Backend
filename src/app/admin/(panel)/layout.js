@@ -26,6 +26,7 @@ export default function AdminLayout({ children }) {
             <Link href="/admin/users" className="hover:underline">Users</Link>
             <Link href="/admin/announcements" className="hover:underline">Announcements</Link>
             <Link href="/admin/logs" className="hover:underline">Logs</Link>
+            <Link href="/admin/crashes" className="hover:underline">Crashes</Link>
             <Link href="/admin/settings" className="hover:underline">Settings</Link>
             <Link href="/admin/docs" className="hover:underline">Docs</Link>
           </nav>

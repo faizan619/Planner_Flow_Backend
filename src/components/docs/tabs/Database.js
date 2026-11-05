@@ -26,6 +26,7 @@ export default function Database() {
             [<C key="12">export_tokens</C>, "One-time download links", "token_hash, format, expires_at, used_at"],
             [<C key="13">app_settings</C>, "Admin settings (log switches, retention)", "setting_key, value (JSON)"],
             [<C key="14">activity_logs</C>, "Activity logs", "created_at, category, event, user_id, actor_id, email, ip, user_agent, details"],
+            [<C key="15">crash_reports</C>, "Crashes sent by the app, one row per distinct crash", "fingerprint, source, error_name, message, stack, app_version, version_code, device, occurrences"],
           ]}
         />
         <Note>

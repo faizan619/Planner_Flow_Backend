@@ -496,3 +496,29 @@ CREATE TABLE IF NOT EXISTS budgets (
   KEY idx_budgets_seq (user_id, server_seq),
   CONSTRAINT fk_budgets_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
+
+
+-- ---------------------------------------------------------------------
+-- 23. crash_reports — crashes sent by the app (src/server/crashes.js). One
+--     row per distinct crash in a version, counted in occurrences. Nothing
+--     links a row to a user; emails and long numbers are removed from the
+--     text before it is stored. Deleted 90 days after last seen.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS crash_reports (
+  id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  fingerprint      CHAR(64)        NOT NULL,
+  source           ENUM('js', 'native') NOT NULL,
+  error_name       VARCHAR(120)    NOT NULL,
+  message          VARCHAR(500)    NOT NULL DEFAULT '',
+  stack            TEXT            NOT NULL,
+  app_version      VARCHAR(20)     NOT NULL,
+  version_code     INT UNSIGNED    NOT NULL,
+  android_version  VARCHAR(20)     NOT NULL DEFAULT '',
+  device           VARCHAR(120)    NOT NULL DEFAULT '',
+  occurrences      INT UNSIGNED    NOT NULL DEFAULT 1,
+  first_seen_at    TIMESTAMP(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  last_seen_at     TIMESTAMP(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_crash_reports_fingerprint (fingerprint),
+  KEY idx_crash_reports_seen (last_seen_at)
+);

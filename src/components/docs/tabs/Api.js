@@ -62,6 +62,7 @@ export default function Api() {
             [<C key="10">DELETE /inbox/:id</C>, USER, "→ 204; removes it from your inbox only"],
             [<C key="11">GET /health</C>, ANYONE, "→ { ok }; checks the database connection (nothing else, since it is public)"],
             [<C key="12">GET /app/latest</C>, ANYONE, "→ { version, versionCode, minimumVersionCode, releasedOn, whatsNew, downloadPage }; the app offers an update when a newer versionCode is out (from src/config/release.js)"],
+            [<C key="12b">POST /crashes</C>, ANYONE, "{ source, name, message, stack, appVersion, versionCode, androidVersion, device } → 204; anonymous, 30 an hour per IP"],
           ]}
         />
       </Section>

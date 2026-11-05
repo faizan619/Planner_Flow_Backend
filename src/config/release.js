@@ -11,18 +11,18 @@
 
 const REPO = "https://github.com/faizan619/Planner_Flow_Backend";
 
-const version = "1.0.9";
-const versionCode = 12;
+const version = "1.0.10";
+const versionCode = 13;
 const fileName = `planner-flow-${version}-${versionCode}.apk`;
 
 export const release = {
   version,
   versionCode,
   fileName,
-  releasedOn: "2026-11-03",
-  sizeBytes: 110_464_661,
+  releasedOn: "2026-11-05",
+  sizeBytes: 110_663_838,
   // SHA-256 of the APK file, so people can check the download is intact.
-  sha256: "71cc48efa88d7dbe125c84e02617dd95c0412b34aa21005584a3decf48e92c7a",
+  sha256: "b6966ce5fd78da57005ae4505ee53890c2b47188d01206cc1c9919ec13ea0b87",
   // SHA-256 of the signing certificate. The same for every version: Android
   // only installs an update signed with the same key.
   certificateSha256: "2d719fb45b33367015d3a1dfa2f0739b23992cd6d331a21eb989d48bead07a0a",
@@ -36,10 +36,8 @@ export const release = {
   downloadUrl: process.env.APK_DOWNLOAD_URL || `${REPO}/releases/download/v${version}-${versionCode}/${fileName}`,
   releasePage: `${REPO}/releases/tag/v${version}-${versionCode}`,
   whatsNew: [
-    "Track your money: add expenses and income, see what came in, what went out and what’s left each month",
-    "Monthly budgets with a heads-up at 80%, a yearly report, search, and a tap to see each category’s entries",
-    "Split a bill with a friend: your share counts as spending, theirs goes to Lent & borrowed",
-    "Forms now move above the keyboard, so fields and Save buttons are never hidden",
-    "Books: mark a book finished in one tap from its page, and see your rating in the Done list",
+    "Home screen widget: see today’s habits and weekly tasks, and tick them off without opening the app",
+    "Calendar: one month with your notes, tasks, habits, money, journal and books together. Find it on the Week page",
+    "If the app crashes, it now sends a report so the problem can be fixed faster",
   ],
 };

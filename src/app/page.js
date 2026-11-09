@@ -14,6 +14,9 @@ export default function Home() {
         <Link href="/download" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
           Get the Android app
         </Link>
+        <Link href="/privacy" className="rounded-lg px-4 py-2 text-sm font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+          Privacy policy
+        </Link>
       </div>
     </main>
   );

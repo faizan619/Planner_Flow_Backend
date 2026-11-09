@@ -377,7 +377,7 @@ function Faq() {
     },
     {
       q: "What does the app know about me?",
-      a: "Your name, email and what you add to it, kept so it syncs between your devices. Your journal is encrypted, and you can export or delete everything from Settings.",
+      a: "Your name, email and what you add to it, kept so it syncs between your devices. Your journal is encrypted, and you can export or delete everything from Settings. The full privacy policy is at the link at the bottom of this page.",
     },
     {
       q: "Does it work without internet?",
@@ -438,6 +438,9 @@ function Footer() {
         <a href="#faq" className="hover:text-[#2F5D50] dark:hover:text-[#9FD4C2]">
           FAQ
         </a>
+        <Link href="/privacy" className="hover:text-[#2F5D50] dark:hover:text-[#9FD4C2]">
+          Privacy
+        </Link>
       </nav>
     </footer>
   );

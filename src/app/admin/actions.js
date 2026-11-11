@@ -6,6 +6,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { setUserStatus } from "@/server/admin";
+import { FeedbackReply, FeedbackStatusChange, replyToFeedback, setFeedbackStatus } from "@/server/feedback";
 import { NewAnnouncement, createAnnouncement, deleteAnnouncement } from "@/server/announcements";
 import { burnPasswordCheck, verifyPassword } from "@/server/auth/password";
 import { ipFromHeaders } from "@/server/clientIp";
@@ -119,4 +120,31 @@ export async function deleteAnnouncementAction(formData) {
   const id = AnnouncementId.parse(formData.get("announcementId"));
   await deleteAnnouncement(admin, id, await actionMeta());
   refresh();
+}
+
+// Feedback page: mark a message read or done, or reopen it.
+export async function setFeedbackStatusAction(formData) {
+  await requireAdminPage();
+  const { feedbackId, status } = FeedbackStatusChange.parse({ feedbackId: formData.get("feedbackId"), status: formData.get("status") });
+  await setFeedbackStatus(feedbackId, status);
+  refresh();
+}
+
+// Feedback page: reply to a message. It goes to the user's inbox (and phone),
+// and the feedback is marked done.
+export async function replyFeedbackAction(_previous, formData) {
+  const admin = await requireAdminPage();
+  const feedbackId = AnnouncementId.parse(formData.get("feedbackId"));
+  const parsed = FeedbackReply.safeParse({ message: formData.get("message") ?? "" });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the reply.", message: formData.get("message") };
+  let announcement;
+  try {
+    announcement = await replyToFeedback(admin, feedbackId, parsed.data.message, await actionMeta());
+  } catch (error) {
+    if (error instanceof ApiError) return { error: error.message, message: formData.get("message") };
+    throw error;
+  }
+  after(() => pushAnnouncement(announcement).catch((error) => console.error("push failed:", error.message)));
+  refresh();
+  return null;
 }

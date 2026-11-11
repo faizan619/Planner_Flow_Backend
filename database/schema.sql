@@ -536,6 +536,34 @@ ALTER TABLE transactions ADD COLUMN IF NOT EXISTS subscription_id CHAR(36) NULL;
 
 
 -- ---------------------------------------------------------------------
+-- 25. feedback — ideas, bug reports and other messages sent from the app
+--     (Settings → Send feedback; src/server/feedback.js), read on the
+--     admin Feedback page. status: new → read → done. App version and
+--     phone model only when the user leaves that switch on. An admin's
+--     reply goes to the user's inbox as an announcement and is kept here
+--     too (reply, replied_at, replied_by). Deleted with the account.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS feedback (
+  id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id         BIGINT UNSIGNED NOT NULL,
+  kind            ENUM('idea', 'bug', 'other') NOT NULL,
+  message         VARCHAR(2000)   NOT NULL,
+  status          ENUM('new', 'read', 'done') NOT NULL DEFAULT 'new',
+  app_version     VARCHAR(20)     NULL,
+  version_code    INT UNSIGNED    NULL,
+  android_version VARCHAR(20)     NULL,
+  device          VARCHAR(120)    NULL,
+  reply           VARCHAR(1500)   NULL,
+  replied_at      TIMESTAMP(3)    NULL,
+  replied_by      BIGINT UNSIGNED NULL,
+  created_at      TIMESTAMP(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_feedback_status (status, created_at),
+  CONSTRAINT fk_feedback_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+
+-- ---------------------------------------------------------------------
 -- 23. crash_reports — crashes sent by the app (src/server/crashes.js). One
 --     row per distinct crash in a version, counted in occurrences. Nothing
 --     links a row to a user; emails and long numbers are removed from the

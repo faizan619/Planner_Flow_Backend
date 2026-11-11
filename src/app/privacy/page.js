@@ -6,7 +6,7 @@ import Link from "next/link";
 // src/server/logs.js (activity logs), src/server/crashes.js, src/server/push.js.
 // Change UPDATED_ON whenever the text changes.
 
-const UPDATED_ON = "9 November 2026";
+const UPDATED_ON = "15 November 2026"; // the release with subscriptions and feedback
 
 export const metadata = {
   title: "Privacy policy · Planner Flow",
@@ -44,10 +44,11 @@ export default function PrivacyPage() {
           <Table
             rows={[
               ["Your account", "Name, email address, a scrambled (hashed) password, time zone, week start day and currency.", "To sign you in and send your verification and password-reset codes."],
-              ["What you add", "Habits and their marks, weekly tasks, motivation lines, notes and reminders, money entries, budgets, journal entries, books and reading goals.", "So your planner syncs and is safe if you change or lose your phone."],
+              ["What you add", "Habits and their marks, weekly tasks, motivation lines, notes and reminders, money entries, budgets, subscriptions, journal entries, books and reading goals.", "So your planner syncs and is safe if you change or lose your phone."],
               ["Journal entries", "Title and text are encrypted on the server (AES-256-GCM). Tags stay readable so the app can filter them.", "Nobody else, including the admin, can read your journal."],
               ["Push notification token", "An ID from Google's Firebase that lets the server send announcements to your phone.", "For Inbox announcements. Removed when you sign out or delete your account."],
               ["Security and activity logs", "Sign-ins, sign-ups, password resets and similar events, with the time, IP address, device or browser name and email address. Never passwords, codes or anything you write.", "To spot abuse and fix problems. Deleted automatically after 45 days (the admin can set 7–365 days)."],
+              ["Feedback you send", "Your message, whether it's an idea, a bug or something else, and (if you leave that switch on) the app version, Android version and phone model. Linked to your account so a reply can reach your Inbox.", "So the developer can read it and answer. Deleted with your account."],
               ["Crash reports", "The error, app version, Android version and phone model. Not linked to your account, and nothing you wrote.", "To find and fix crashes."],
               ["Short-lived records", "Sign-in tokens, one-time codes, export links and rate-limit counters (which include IP addresses).", "To keep sign-in safe and stop abuse. They expire on their own."],
             ]}

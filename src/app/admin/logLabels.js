@@ -22,6 +22,7 @@ export const EVENT_LABELS = {
   books_import_previewed: "Previewed a book import",
   data_exported: "Exported data",
   device_registered: "Registered phone for push",
+  feedback_sent: "Sent feedback",
 };
 
 export const CATEGORY_LABELS = { security: "Security", admin: "Admin", usage: "Usage" };

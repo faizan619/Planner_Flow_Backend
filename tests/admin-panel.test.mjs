@@ -99,6 +99,23 @@ describe("admin web panel", () => {
     assert.ok(html.includes(admin.email));
   });
 
+  test("the Feedback page lists messages with who sent them", async () => {
+    const sender = await verifiedUser("panel-feedback-user");
+    const sent = await api("POST", "/api/v1/feedback", {
+      token: sender.accessToken,
+      body: { kind: "idea", message: "Please add a dark widget", device: "Pixel 8" },
+    });
+    assert.equal(sent.status, 201);
+    const admin = await verifiedUser("panel-feedback");
+    await sql("UPDATE users SET role = 'admin' WHERE email = ?", [admin.email]);
+    const { cookie } = await submitLogin(admin.email, PASSWORD);
+    const html = decode(await getPanel("/admin/feedback", cookie));
+    assert.ok(html.includes("Please add a dark widget"));
+    assert.ok(html.includes(sender.email));
+    assert.match(html, /Pixel 8/);
+    assert.match(decode(await getPanel("/admin", cookie)), /New feedback/);
+  });
+
   test("the Settings form saves the log switches and retention", async () => {
     const admin = await verifiedUser("panel-settings");
     await sql("UPDATE users SET role = 'admin' WHERE email = ?", [admin.email]);

@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { stats } from "@/server/admin";
+import { feedbackCounts } from "@/server/feedback";
 import { requireAdminPage } from "@/server/auth/webSession";
 import { isPushConfigured } from "@/server/push";
 import { Card, Loading } from "../ui";
@@ -18,7 +20,7 @@ export default function AdminOverview() {
 
 async function Overview() {
   await requireAdminPage();
-  const numbers = await stats();
+  const [numbers, feedback] = await Promise.all([stats(), feedbackCounts()]);
   const tiles = [
     ["Total users", numbers.total],
     ["Active in the last 7 days", numbers.activeThisWeek],
@@ -36,6 +38,19 @@ async function Overview() {
           </Card>
         ))}
       </div>
+      <Link href="/admin/feedback" className="block">
+        <Card className={feedback.new ? "border-amber-300 dark:border-amber-700" : ""}>
+          <div className="flex items-baseline justify-between gap-4">
+            <div>
+              <p className="text-sm text-zinc-500">New feedback</p>
+              <p className="text-3xl font-bold">{feedback.new}</p>
+            </div>
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+              {feedback.open} to look at · {feedback.total} in all →
+            </span>
+          </div>
+        </Card>
+      </Link>
       <Card title="Push notifications">
         {isPushConfigured() ? (
           <p className="text-sm text-emerald-700 dark:text-emerald-400">Firebase is set up: announcements are pushed to phones.</p>

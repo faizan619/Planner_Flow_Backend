@@ -44,7 +44,7 @@ const bool = (value) => (value === null ? null : Boolean(value));
 
 export async function collectUserData(user) {
   const id = user.id;
-  const [habits, habitMarks, weeks, weeklyTasks, reminders, lessons, books, bookReadings, readingGoals, inbox, transactions, budgets] = await Promise.all([
+  const [habits, habitMarks, weeks, weeklyTasks, reminders, lessons, books, bookReadings, readingGoals, inbox, transactions, budgets, subscriptions] = await Promise.all([
     query(`SELECT id, title, sort_order AS sortOrder, started_on AS startedOn, archived_on AS archivedOn FROM habits WHERE user_id = ? AND ${live} ORDER BY sort_order`, [id]),
     query(`SELECT habit_id AS habitId, mark_date AS date, status FROM habit_marks WHERE user_id = ? AND ${live} ORDER BY mark_date`, [id]),
     query(`SELECT start_date AS weekStart, motivation FROM weeks WHERE user_id = ? AND ${live} ORDER BY start_date`, [id]),
@@ -73,11 +73,18 @@ export async function collectUserData(user) {
       [id]
     ),
     query(
-      `SELECT id, kind, amount_minor AS amountMinor, currency, category, method, tx_date AS date, note, owed_id AS owedId
+      `SELECT id, kind, amount_minor AS amountMinor, currency, category, method, tx_date AS date, note, owed_id AS owedId,
+              subscription_id AS subscriptionId
        FROM transactions WHERE user_id = ? AND ${live} ORDER BY tx_date, updated_at`,
       [id]
     ),
     query(`SELECT category, currency, amount_minor AS amountMinor FROM budgets WHERE user_id = ? AND ${live} ORDER BY currency, category`, [id]),
+    query(
+      `SELECT id, name, amount_minor AS amountMinor, currency, category, method, cycle, cycle_count AS cycleCount,
+              start_date AS startDate, next_due AS nextDue, trial_ends_on AS trialEndsOn, status, cancelled_on AS cancelledOn, note
+       FROM subscriptions WHERE user_id = ? AND ${live} ORDER BY name`,
+      [id]
+    ),
   ]);
 
   return {
@@ -105,6 +112,7 @@ export async function collectUserData(user) {
     inbox,
     transactions: transactions.map((t) => ({ ...t, amountMinor: Number(t.amountMinor) })),
     budgets: budgets.map((b) => ({ ...b, amountMinor: Number(b.amountMinor) })),
+    subscriptions: subscriptions.map((sub) => ({ ...sub, amountMinor: Number(sub.amountMinor), cycleCount: Number(sub.cycleCount) })),
   };
 }
 
@@ -243,6 +251,21 @@ export async function buildWorkbook(data) {
     "Budgets",
     [["Category", "category", 18], ["Monthly limit", "amount", 14, "#,##0.00"], ["Currency", "currency", 9]],
     data.budgets.map((b) => ({ category: categoryName(b.category), amount: b.amountMinor / 100, currency: b.currency }))
+  );
+  addSheet(
+    workbook,
+    "Subscriptions",
+    [["Name", "name", 24], ["Amount", "amount", 12, "#,##0.00"], ["Currency", "currency", 9], ["Every", "every", 12], ["Next payment", "nextDue", 14, DATE], ["Category", "category", 18], ["Status", "status", 11], ["Note", "note", 36]],
+    (data.subscriptions ?? []).map((sub) => ({
+      name: sub.name,
+      amount: sub.amountMinor / 100,
+      currency: sub.currency,
+      every: `${sub.cycleCount === 1 ? "" : `${sub.cycleCount} `}${sub.cycle}${sub.cycleCount === 1 ? "" : "s"}`,
+      nextDue: excelDate(sub.nextDue),
+      category: categoryName(sub.category),
+      status: sub.status === "active" ? (sub.trialEndsOn === sub.nextDue ? "Free trial" : "Active") : "Cancelled",
+      note: sub.note,
+    }))
   );
   addSheet(
     workbook,

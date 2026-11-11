@@ -499,6 +499,43 @@ CREATE TABLE IF NOT EXISTS budgets (
 
 
 -- ---------------------------------------------------------------------
+-- 24. subscriptions — payments that repeat (Netflix, rent, a gym), the
+--     app's Money → Subscriptions. Repeats every cycle_count cycles
+--     ('week' | 'month' | 'year') from start_date, its first payment;
+--     next_due is the payment still to come. trial_ends_on is set when it
+--     started with a free trial (the first payment is taken that day).
+--     Paying one adds a transactions row with subscription_id set.
+--     (Numbered 24 though it sits here: it was added after crash_reports.)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS subscriptions (
+  user_id       BIGINT UNSIGNED NOT NULL,
+  id            CHAR(36)        NOT NULL,
+  name          VARCHAR(100)    NOT NULL,
+  amount_minor  BIGINT UNSIGNED NOT NULL,
+  currency      CHAR(3)         NOT NULL,
+  category      VARCHAR(30)     NOT NULL,
+  method        ENUM('cash', 'upi', 'card', 'bank', 'other') NULL,
+  cycle         ENUM('week', 'month', 'year') NOT NULL,
+  cycle_count   TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  start_date    DATE            NOT NULL,
+  next_due      DATE            NOT NULL,
+  trial_ends_on DATE            NULL,
+  status        ENUM('active', 'cancelled') NOT NULL DEFAULT 'active',
+  cancelled_on  DATE            NULL,
+  note          VARCHAR(300)    NOT NULL DEFAULT '',
+  updated_at    BIGINT UNSIGNED NOT NULL,
+  deleted_at    BIGINT UNSIGNED NULL,
+  server_seq    BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (user_id, id),
+  KEY idx_subscriptions_seq (user_id, server_seq),
+  CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- A payment of a subscription (see 24).
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS subscription_id CHAR(36) NULL;
+
+
+-- ---------------------------------------------------------------------
 -- 23. crash_reports — crashes sent by the app (src/server/crashes.js). One
 --     row per distinct crash in a version, counted in occurrences. Nothing
 --     links a row to a user; emails and long numbers are removed from the

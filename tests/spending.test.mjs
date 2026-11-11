@@ -18,6 +18,7 @@ const expense = (overrides = {}) => ({
   date: "2026-11-02",
   note: "Dinner",
   owedId: null,
+  subscriptionId: null,
   updatedAt: Date.now(),
   deletedAt: null,
   ...overrides,

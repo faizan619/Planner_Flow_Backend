@@ -94,6 +94,7 @@ describe("export", () => {
       "Money",
       "Spending",
       "Budgets",
+      "Subscriptions",
       "Life lessons",
       "Inbox",
     ]);

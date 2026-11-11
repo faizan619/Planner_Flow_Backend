@@ -27,8 +27,9 @@ const categorySlug = z.string().regex(/^[a-z][a-z0-9_]{0,29}$/, "Unknown categor
 
 // Each entity: its table, key column, wire fields → columns, and zod schema.
 // Optional `write(record, userId)` / `read(row, userId)` convert between the
-// wire format and stored values (e.g. encryption). Optional `owner` names a
-// field that must point at one of the user's own records in another table.
+// wire format and stored values (e.g. encryption). Optional `owner` (one or
+// a list) names a field that must point at one of the user's own records in
+// another table.
 // Order matters when applying: parents (habits, books) come before children.
 const ENTITIES = {
   habits: {
@@ -204,8 +205,48 @@ const ENTITIES = {
       ...base,
     }),
   },
-  // After reminders: an expense split with someone may link to a money
-  // entry sent in the same sync.
+  // Before transactions, which may be payments of one sent in the same sync.
+  subscriptions: {
+    table: "subscriptions",
+    key: "id",
+    columns: {
+      name: "name",
+      amountMinor: "amount_minor",
+      currency: "currency",
+      category: "category",
+      method: "method",
+      cycle: "cycle",
+      cycleCount: "cycle_count",
+      startDate: "start_date",
+      nextDue: "next_due",
+      trialEndsOn: "trial_ends_on",
+      status: "status",
+      cancelledOn: "cancelled_on",
+      note: "note",
+    },
+    schema: z
+      .object({
+        id: z.uuid(),
+        name: text(z.string().trim().min(1).max(100)),
+        amountMinor: amount,
+        currency,
+        category: categorySlug,
+        method: z.enum(["cash", "upi", "card", "bank", "other"]).nullable(),
+        cycle: z.enum(["week", "month", "year"]),
+        cycleCount: z.number().int().min(1).max(36),
+        startDate: day,
+        nextDue: day,
+        trialEndsOn: day.nullable(),
+        status: z.enum(["active", "cancelled"]),
+        cancelledOn: day.nullable(),
+        note: text(z.string().trim().max(300)),
+        ...base,
+      })
+      .refine((sub) => sub.nextDue >= sub.startDate, "The next payment can't be before the first one"),
+  },
+  // After reminders and subscriptions: an expense split with someone may
+  // link to a money entry, and a subscription payment to its subscription,
+  // sent in the same sync.
   transactions: {
     table: "transactions",
     key: "id",
@@ -218,6 +259,7 @@ const ENTITIES = {
       date: "tx_date",
       note: "note",
       owedId: "owed_id",
+      subscriptionId: "subscription_id",
     },
     schema: z.object({
       id: z.uuid(),
@@ -229,9 +271,14 @@ const ENTITIES = {
       date: day,
       note: text(z.string().trim().max(300)),
       owedId: z.uuid().nullable(),
+      // Apps before subscriptions (1.0.10 and older) don't send it.
+      subscriptionId: z.uuid().nullable().default(null),
       ...base,
     }),
-    owner: { field: "owedId", table: "reminders", message: "Unknown money entry" },
+    owner: [
+      { field: "owedId", table: "reminders", message: "Unknown money entry" },
+      { field: "subscriptionId", table: "subscriptions", message: "Unknown subscription" },
+    ],
   },
   budgets: {
     table: "budgets",
@@ -291,7 +338,7 @@ export async function sync(user, { cursor, changes }) {
       }
       if (!valid.length) continue;
 
-      if (entity.owner) await rejectUnowned(q, user.id, name, entity.owner, valid, rejected);
+      for (const owner of [entity.owner ?? []].flat()) await rejectUnowned(q, user.id, name, owner, valid, rejected);
       if (name === "habitMarks") rejectFutureMarks(valid, today, rejected);
 
       const records = valid.filter((record) => !record.rejected);
@@ -365,6 +412,7 @@ export async function sync(user, { cursor, changes }) {
         ...(row.remindAt !== undefined && { remindAt: row.remindAt === null ? null : Number(row.remindAt) }),
         ...(row.amountMinor !== undefined && { amountMinor: row.amountMinor === null ? null : Number(row.amountMinor) }),
         ...(row.rating !== undefined && { rating: row.rating === null ? null : Number(row.rating) }),
+        ...(row.cycleCount !== undefined && { cycleCount: Number(row.cycleCount) }),
       };
       if (entity.read) {
         try {
@@ -388,8 +436,9 @@ export async function sync(user, { cursor, changes }) {
   });
 }
 
-// A child record (mark, reading, split expense) must point at one of the
-// user's own parent records (habit, book, money entry) — already stored or
+// A child record (mark, reading, split expense, subscription payment) must
+// point at one of the user's own parent records (habit, book, money entry,
+// subscription) — already stored or
 // arriving in this same sync. An optional link left empty is fine.
 async function rejectUnowned(q, userId, type, owner, records, rejected) {
   const parentIds = [...new Set(records.map((record) => record[owner.field]).filter(Boolean))];

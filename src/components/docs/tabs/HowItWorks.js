@@ -88,7 +88,8 @@ phone: rows it sent are clean again; server rows are written unless the
             ["habits · habitMarks", "Daily habits and their done / missed marks (id = habitId_date)"],
             ["weeks · weeklyTasks", "Motivation per week; weekly tasks with carry links"],
             ["reminders", "Notes and money entries"],
-            ["transactions · budgets", "Expenses and income (an expense split with someone links to its money entry); monthly budgets (id = currency:category)"],
+            ["transactions · budgets", "Expenses and income (an expense split with someone links to its money entry, a subscription payment to its subscription); monthly budgets (id = currency:category)"],
+            ["subscriptions", "Payments that repeat every week, month or year, with an optional free trial; paying one adds an expense"],
             ["lessons", "Journal entries (encrypted on the server)"],
             ["books · bookReadings · readingGoals", "Books, each reading of them, yearly goals"],
           ]}

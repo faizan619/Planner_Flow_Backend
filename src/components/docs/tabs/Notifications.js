@@ -15,7 +15,6 @@ export default function Notifications() {
           head={["Reminder", "When", "Notes"]}
           rows={[
             ["Daily check-in", "Every day at the chosen time (default 9 pm)", "“Mark today’s habits”"],
-            ["Week ending", "The day before the week ends, at the chosen time (default 8 pm)", "Only if weekly tasks are still open; says how many"],
             ["Reminder notes", "At each note’s time", "Open notes with a future time, soonest 50"],
           ]}
         />

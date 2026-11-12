@@ -81,7 +81,7 @@ const APP = [
   ]],
   ["Books (books.test.mjs)", ["Reading rules", "Same book ignores case and spacing; re-read numbering", "Year stats", "Planning an import, and skipping already-imported rows"]],
   ["Reminders and journal (reminders-lessons.test.mjs)", ["Exact paise parsing, Indian formatting, totals", "Note order and overdue", "Tags, multi-word search, “On this day”"]],
-  ["Phone reminders (notifications.test.mjs)", ["Daily check-in time", "Week-ending reminder: right day, only with open tasks, only if ahead", "Notes: future, open, soonest first", "Each kind can be switched off"]],
+  ["Phone reminders (notifications.test.mjs)", ["Daily check-in time", "Notes: future, open, soonest first", "Each kind can be switched off"]],
   ["PIN lock (lock.test.mjs)", ["4–6 digits", "Locks after 30 s away, only when enabled", "5 free tries, then waits up to 15 minutes"]],
   ["Drag to reorder (dragOrder.test.mjs)", ["A short drag stays put; passing half of a neighbour takes its place, rows of any height, gaps included", "Up and down, stopping at the ends", "Applying an order renumbers and saves only what changed, keeping tasks added since"]],
   ["Dashboard insights (dashboard.test.mjs)", ["This week vs last week, in percentage points", "Encouraging line follows the week’s share", "Strongest weekday", "Perfect days, not spoiled by habits added later", "Most consistent and needs-attention habits (only below 60%, enough days)"]],

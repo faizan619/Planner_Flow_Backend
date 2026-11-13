@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { json, transaction } from "@/server/db";
+import { json, queryOne, transaction } from "@/server/db";
 import { BOOK_TYPES, READING_STATUSES, readingProblems } from "@/server/books";
 import { decrypt, encrypt } from "@/server/crypto";
 import { sanitizeRichText, text } from "@/server/sanitize";
@@ -314,8 +314,25 @@ function selectColumns(entity) {
   );
 }
 
+// The answer when there is nothing to send back: same cursor, no changes.
+const upToDate = (cursor) => ({
+  cursor,
+  hasMore: false,
+  fullResync: false,
+  changes: Object.fromEntries(ENTITY_NAMES.map((name) => [name, []])),
+  rejected: [],
+});
+
 // Applies `changes` for `user` and returns { cursor, hasMore, fullResync, changes, rejected }.
 export async function sync(user, { cursor, changes }) {
+  // Most syncs (opening the app, the timer) send nothing and nothing changed
+  // since the last one. One row read answers those, instead of locking the
+  // user and checking every table.
+  if (!ENTITY_NAMES.some((name) => changes[name]?.length)) {
+    const latest = await queryOne("SELECT sync_seq AS seq FROM users WHERE id = ?", [user.id]);
+    if (latest && Number(latest.seq) === cursor) return upToDate(cursor);
+  }
+
   const rejected = [];
   const now = Date.now();
 

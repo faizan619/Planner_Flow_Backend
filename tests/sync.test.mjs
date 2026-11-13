@@ -184,6 +184,37 @@ describe("sync", () => {
     assert.equal(byId[copy.id].weekStart, "2026-10-19");
   });
 
+  test("nothing new: the same cursor back, then another phone's change still arrives", async () => {
+    const { accessToken } = await verifiedUser("sync-quiet");
+    const first = await sync(accessToken, 0, { habits: [habit()] });
+    const cursor = first.body.cursor;
+
+    // Up to date and sending nothing (the shortcut).
+    const quiet = await sync(accessToken, cursor);
+    assert.equal(quiet.status, 200);
+    assert.deepEqual(
+      { cursor: quiet.body.cursor, hasMore: quiet.body.hasMore, fullResync: quiet.body.fullResync, rejected: quiet.body.rejected },
+      { cursor, hasMore: false, fullResync: false, rejected: [] }
+    );
+    assert.ok(Object.values(quiet.body.changes).every((list) => list.length === 0));
+    assert.equal(quiet.body.changes.habits.length, 0);
+
+    // Another phone adds a habit; this phone's next empty sync pulls it.
+    const other = habit({ title: "Stretch" });
+    await sync(accessToken, cursor, { habits: [other] });
+    const next = await sync(accessToken, cursor);
+    assert.deepEqual(
+      next.body.changes.habits.map((item) => item.title),
+      ["Stretch"]
+    );
+    assert.ok(next.body.cursor > cursor);
+
+    // A brand-new account with nothing yet.
+    const fresh = await verifiedUser("sync-quiet-new");
+    const empty = await sync(fresh.accessToken, 0);
+    assert.deepEqual([empty.body.cursor, empty.body.fullResync, empty.body.changes.habits.length], [0, false, 0]);
+  });
+
   test("a cursor from the future triggers a full resync", async () => {
     const { accessToken } = await verifiedUser("sync-reset");
     await sync(accessToken, 0, { habits: [habit()] });

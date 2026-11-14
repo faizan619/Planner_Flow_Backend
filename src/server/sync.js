@@ -62,6 +62,7 @@ const ENTITIES = {
       weekStart: "week_start",
       title: "title",
       done: "done",
+      missed: "missed",
       carriedFromId: "carried_from_id",
       carriedToId: "carried_to_id",
       sortOrder: "sort_order",
@@ -71,6 +72,8 @@ const ENTITIES = {
       weekStart: day,
       title: text(z.string().trim().min(1).max(200)),
       done: z.boolean(),
+      // Marked "didn't make it" mid-week. Older apps don't send it.
+      missed: z.boolean().default(false),
       carriedFromId: z.uuid().nullable(),
       carriedToId: z.uuid().nullable(),
       sortOrder: z.number().int(),
@@ -128,31 +131,6 @@ const ENTITIES = {
         }
       }),
   },
-  lessons: {
-    table: "lessons",
-    key: "id",
-    columns: { title: "title_enc", body: "body_enc", lessonDate: "lesson_date", tags: "tags" },
-    schema: z.object({
-      id: z.uuid(),
-      title: text(z.string().trim().min(1).max(200)),
-      body: z.string().max(50000).transform(sanitizeRichText), // HTML from the app's editor, reduced to its own tags
-      lessonDate: day,
-      tags: z.array(text(z.string().trim().min(1).max(30))).max(10),
-      ...base,
-    }),
-    write: (lesson, userId) => ({
-      ...lesson,
-      title: encrypt(lesson.title, `${userId}:${lesson.id}:title`),
-      body: encrypt(lesson.body, `${userId}:${lesson.id}:body`),
-      tags: JSON.stringify(lesson.tags),
-    }),
-    read: (row, userId) => ({
-      ...row,
-      title: decrypt(row.title, `${userId}:${row.id}:title`),
-      body: decrypt(row.body, `${userId}:${row.id}:body`),
-      tags: json(row.tags),
-    }),
-  },
   books: {
     table: "books",
     key: "id",
@@ -203,6 +181,35 @@ const ENTITIES = {
       id: z.string().regex(/^(19|20|21)\d{2}$/, "Use a 4-digit year"), // the year
       target: z.number().int().min(1).max(1000),
       ...base,
+    }),
+  },
+  // After books: a lesson can point at a book sent in the same sync.
+  lessons: {
+    table: "lessons",
+    key: "id",
+    columns: { title: "title_enc", body: "body_enc", lessonDate: "lesson_date", tags: "tags", bookId: "book_id" },
+    schema: z.object({
+      id: z.uuid(),
+      title: text(z.string().trim().min(1).max(200)),
+      body: z.string().max(50000).transform(sanitizeRichText), // HTML from the app's editor, reduced to its own tags
+      lessonDate: day,
+      tags: z.array(text(z.string().trim().min(1).max(30))).max(10),
+      // A note or quote about one of the user's books. Older apps don't send it.
+      bookId: z.uuid().nullable().default(null),
+      ...base,
+    }),
+    owner: { field: "bookId", table: "books", message: "Unknown book" },
+    write: (lesson, userId) => ({
+      ...lesson,
+      title: encrypt(lesson.title, `${userId}:${lesson.id}:title`),
+      body: encrypt(lesson.body, `${userId}:${lesson.id}:body`),
+      tags: JSON.stringify(lesson.tags),
+    }),
+    read: (row, userId) => ({
+      ...row,
+      title: decrypt(row.title, `${userId}:${row.id}:title`),
+      body: decrypt(row.body, `${userId}:${row.id}:body`),
+      tags: json(row.tags),
     }),
   },
   // Before transactions, which may be payments of one sent in the same sync.
@@ -426,6 +433,7 @@ export async function sync(user, { cursor, changes }) {
         updatedAt: Number(row.updatedAt),
         deletedAt: row.deletedAt === null ? null : Number(row.deletedAt),
         ...(row.done !== undefined && { done: Boolean(row.done) }),
+        ...(row.missed !== undefined && { missed: Boolean(row.missed) }),
         ...(row.remindAt !== undefined && { remindAt: row.remindAt === null ? null : Number(row.remindAt) }),
         ...(row.amountMinor !== undefined && { amountMinor: row.amountMinor === null ? null : Number(row.amountMinor) }),
         ...(row.rating !== undefined && { rating: row.rating === null ? null : Number(row.rating) }),

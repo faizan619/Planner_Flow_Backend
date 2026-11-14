@@ -51,6 +51,25 @@ describe("life lessons", () => {
     assert.equal(back.lessonDate, "2026-10-20");
   });
 
+  test("a lesson can be a note about a book: new book in the same sync, unknown books refused, old apps fine", async () => {
+    const { accessToken } = await verifiedUser("lesson-book");
+    const book = { id: randomUUID(), title: "Atomic Habits", author: "James Clear", genre: "Self-help", updatedAt: Date.now(), deletedAt: null };
+    const quote = lesson({ title: "You fall to the level of your systems", bookId: book.id });
+    const stray = lesson({ title: "About a book that isn't mine", bookId: randomUUID() });
+    const plain = lesson(); // an older app: no bookId at all
+
+    const res = await sync(accessToken, 0, { books: [book], lessons: [quote, stray, plain] });
+    assert.equal(res.status, 200);
+    assert.deepEqual(
+      res.body.rejected.map((item) => [item.id, item.reason]),
+      [[stray.id, "Unknown book"]]
+    );
+    const pulled = Object.fromEntries(res.body.changes.lessons.map((item) => [item.id, item.bookId]));
+    assert.equal(pulled[quote.id], book.id);
+    assert.equal(pulled[plain.id], null);
+    assert.equal(stray.id in pulled, false);
+  });
+
   test("title and text are encrypted at rest", async () => {
     const { accessToken } = await verifiedUser("lesson-encrypted");
     const l = lesson({ title: "Secret title", body: "Very personal text" });

@@ -58,7 +58,7 @@ export default function HowItWorks() {
         </P>
         <Code>{`phone edits a record ──► SQLite row (dirty = 1, updatedAt = now)
                                   │
-       sync: a moment after an edit · on open · back online · every 2 min
+       sync: a moment after an edit · on open · back online · every 5 min
                                   │
 POST /api/v1/sync { cursor, changes: { habits: [...], weeklyTasks: [...], ... } }
                                   │

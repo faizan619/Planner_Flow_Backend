@@ -158,6 +158,30 @@ describe("sync", () => {
     assert.equal(tooMany.status, 400);
   });
 
+  test("a weekly task can be marked missed mid-week; older apps that don't send it get false", async () => {
+    const { accessToken } = await verifiedUser("sync-missed");
+    const task = (overrides) => ({
+      id: randomUUID(),
+      weekStart: "2026-11-09",
+      title: "No junk food this week",
+      done: false,
+      carriedFromId: null,
+      carriedToId: null,
+      sortOrder: 0,
+      updatedAt: Date.now(),
+      deletedAt: null,
+      ...overrides,
+    });
+    const slipped = task({ missed: true });
+    const oldApp = task({ title: "Call the bank" }); // no `missed` at all
+    const res = await sync(accessToken, 0, { weeklyTasks: [slipped, oldApp] });
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.rejected, []);
+    const byId = Object.fromEntries(res.body.changes.weeklyTasks.map((item) => [item.id, item]));
+    assert.equal(byId[slipped.id].missed, true);
+    assert.equal(byId[oldApp.id].missed, false);
+  });
+
   test("week rollover data: carrying an unfinished task links both weeks", async () => {
     const { accessToken } = await verifiedUser("sync-carry");
     const original = {

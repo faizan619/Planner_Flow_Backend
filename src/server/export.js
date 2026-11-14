@@ -49,7 +49,7 @@ export async function collectUserData(user) {
     query(`SELECT habit_id AS habitId, mark_date AS date, status FROM habit_marks WHERE user_id = ? AND ${live} ORDER BY mark_date`, [id]),
     query(`SELECT start_date AS weekStart, motivation FROM weeks WHERE user_id = ? AND ${live} ORDER BY start_date`, [id]),
     query(
-      `SELECT id, week_start AS weekStart, title, done, carried_from_id AS carriedFromId, carried_to_id AS carriedToId
+      `SELECT id, week_start AS weekStart, title, done, missed, carried_from_id AS carriedFromId, carried_to_id AS carriedToId
        FROM weekly_tasks WHERE user_id = ? AND ${live} ORDER BY week_start, sort_order`,
       [id]
     ),
@@ -58,7 +58,7 @@ export async function collectUserData(user) {
        FROM reminders WHERE user_id = ? AND ${live} ORDER BY updated_at`,
       [id]
     ),
-    query(`SELECT id, title_enc AS title, body_enc AS body, lesson_date AS lessonDate, tags FROM lessons WHERE user_id = ? AND ${live} ORDER BY lesson_date`, [id]),
+    query(`SELECT id, title_enc AS title, body_enc AS body, lesson_date AS lessonDate, tags, book_id AS bookId FROM lessons WHERE user_id = ? AND ${live} ORDER BY lesson_date`, [id]),
     query(`SELECT id, title, author, genre FROM books WHERE user_id = ? AND ${live} ORDER BY title`, [id]),
     query(
       `SELECT id, book_id AS bookId, read_number AS readNumber, type, status, start_date AS startDate, end_date AS endDate, rating
@@ -93,7 +93,7 @@ export async function collectUserData(user) {
     habits,
     habitMarks,
     weeks,
-    weeklyTasks: weeklyTasks.map((task) => ({ ...task, done: bool(task.done) })),
+    weeklyTasks: weeklyTasks.map((task) => ({ ...task, done: bool(task.done), missed: bool(task.missed) })),
     reminders: reminders.map((r) => ({
       ...r,
       done: bool(r.done),
@@ -204,7 +204,7 @@ export async function buildWorkbook(data) {
     data.weeklyTasks.map((task) => ({
       week: excelDate(task.weekStart),
       title: task.title,
-      done: task.done ? "Yes" : "No",
+      done: task.done ? "Yes" : task.missed ? "Missed" : "No",
       carried: task.carriedToId ? "To a later week" : task.carriedFromId ? "From earlier" : "",
     }))
   );

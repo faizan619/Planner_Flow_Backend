@@ -193,6 +193,9 @@ CREATE TABLE IF NOT EXISTS weekly_tasks (
   KEY idx_weekly_tasks_week (user_id, week_start),
   CONSTRAINT fk_weekly_tasks_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
+-- Marked "didn't make it" during its week (✗ before the week is over),
+-- e.g. a "no junk food this week" that slipped on Tuesday.
+ALTER TABLE weekly_tasks ADD COLUMN IF NOT EXISTS missed BOOLEAN NOT NULL DEFAULT FALSE;
 
 
 -- ---------------------------------------------------------------------
@@ -240,6 +243,9 @@ CREATE TABLE IF NOT EXISTS lessons (
   KEY idx_lessons_seq (user_id, server_seq),
   CONSTRAINT fk_lessons_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
+-- A lesson can be a note or quote about one of the user's books (the app's
+-- Books → a book → Notes & quotes). NULL for ordinary lessons.
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS book_id CHAR(36) NULL;
 
 
 -- ---------------------------------------------------------------------

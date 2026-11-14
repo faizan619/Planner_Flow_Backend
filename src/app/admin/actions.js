@@ -82,6 +82,9 @@ export async function sendAnnouncementAction(_previous, formData) {
     body: formData.get("body") ?? "",
     audience: formData.get("audience") ?? "all",
     userIds: formData.getAll("userIds"),
+    kind: formData.get("kind") ?? "message",
+    options: formData.getAll("options"),
+    closesInDays: formData.get("closesInDays") ?? null,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check the form.", values: Object.fromEntries(formData) };
@@ -126,7 +129,11 @@ export async function deleteAnnouncementAction(formData) {
 export async function setFeedbackStatusAction(formData) {
   await requireAdminPage();
   const { feedbackId, status } = FeedbackStatusChange.parse({ feedbackId: formData.get("feedbackId"), status: formData.get("status") });
-  await setFeedbackStatus(feedbackId, status);
+  try {
+    await setFeedbackStatus(feedbackId, status);
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error; // already deleted with its account: just refresh
+  }
   refresh();
 }
 

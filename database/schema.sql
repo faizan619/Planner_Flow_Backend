@@ -593,3 +593,28 @@ CREATE TABLE IF NOT EXISTS crash_reports (
   UNIQUE KEY uq_crash_reports_fingerprint (fingerprint),
   KEY idx_crash_reports_seen (last_seen_at)
 );
+
+
+-- ---------------------------------------------------------------------
+-- 26. Answering announcements. An announcement is a plain message, a poll
+--     (2–5 options, one vote each) or a question (users reply privately;
+--     replies land on the admin Feedback page, feedback.announcement_id).
+--     closes_at: optional end for voting and replies. Anyone it was sent
+--     to can react with one emoji.
+-- ---------------------------------------------------------------------
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS kind ENUM('message', 'poll', 'question') NOT NULL DEFAULT 'message';
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS options JSON NULL;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS closes_at TIMESTAMP NULL;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS announcement_id BIGINT UNSIGNED NULL;
+
+-- One row per user per announcement they reacted to or voted on.
+CREATE TABLE IF NOT EXISTS announcement_responses (
+  announcement_id  BIGINT UNSIGNED NOT NULL,
+  user_id          BIGINT UNSIGNED NOT NULL,
+  reaction         VARCHAR(16)     NULL,
+  choice           TINYINT UNSIGNED NULL,
+  updated_at       TIMESTAMP(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (announcement_id, user_id),
+  CONSTRAINT fk_responses_announcement FOREIGN KEY (announcement_id) REFERENCES announcements (id) ON DELETE CASCADE,
+  CONSTRAINT fk_responses_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);

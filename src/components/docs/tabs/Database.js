@@ -22,12 +22,13 @@ export default function Database() {
             [<C key="7c">subscriptions</C>, "Payments that repeat, with free trials", "name, amount_minor, currency, category, method, cycle, cycle_count, start_date, next_due, trial_ends_on, status, cancelled_on, note"],
             [<C key="8">lessons</C>, "Journal", "title_enc, body_enc (encrypted), lesson_date, tags (JSON), book_id (a note or quote about a book, or NULL)"],
             [<C key="9">books · book_readings · reading_goals</C>, "Book tracker", "title, author, genre · read_number, type, status, start/end, rating · year, target"],
-            [<C key="10">announcements · announcement_recipients</C>, "Announcements; the inbox", "audience · read_at, dismissed_at, push_status"],
+            [<C key="10">announcements · announcement_recipients</C>, "Announcements (message, poll or question); the inbox", "audience, kind, options (poll), closes_at · read_at, dismissed_at, push_status"],
+            [<C key="10a">announcement_responses</C>, "Each user's reaction and poll vote on an announcement", "announcement_id + user_id, reaction, choice (option index)"],
             [<C key="11">device_tokens</C>, "Phones registered for push", "token, user_id, platform, last_seen_at"],
             [<C key="12">export_tokens</C>, "One-time download links", "token_hash, format, expires_at, used_at"],
             [<C key="13">app_settings</C>, "Admin settings (log switches, retention)", "setting_key, value (JSON)"],
             [<C key="14">activity_logs</C>, "Activity logs", "created_at, category, event, user_id, actor_id, email, ip, user_agent, details"],
-            [<C key="14b">feedback</C>, "Ideas, bugs and other messages from the app (admin Feedback page)", "user_id, kind, message, status (new · read · done), app_version, version_code, android_version, device"],
+            [<C key="14b">feedback</C>, "Ideas, bugs and other messages from the app (admin Feedback page)", "user_id, kind, message, status (new · read · done), app_version, version_code, android_version, device, announcement_id (an answer to a question)"],
             [<C key="15">crash_reports</C>, "Crashes sent by the app, one row per distinct crash", "fingerprint, source, error_name, message, stack, app_version, version_code, device, occurrences"],
           ]}
         />

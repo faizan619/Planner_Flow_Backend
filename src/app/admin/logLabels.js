@@ -23,6 +23,7 @@ export const EVENT_LABELS = {
   data_exported: "Exported data",
   device_registered: "Registered phone for push",
   feedback_sent: "Sent feedback",
+  question_answered: "Answered a question",
 };
 
 export const CATEGORY_LABELS = { security: "Security", admin: "Admin", usage: "Usage" };

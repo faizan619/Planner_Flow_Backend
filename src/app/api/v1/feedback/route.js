@@ -10,8 +10,9 @@ import { rateLimit } from "@/server/rateLimit";
 // Idempotent: a retry after a dropped connection doesn't send it twice.
 export const POST = idempotent(route(async (request) => {
   const user = await requireUser(request);
-  await rateLimit(`feedback:user:${user.id}`, { limit: 5, windowSeconds: 86_400 });
+  // Checked first, so a message with a mistake doesn't use up the day's 5.
   const feedback = await readJson(request, NewFeedback);
+  await rateLimit(`feedback:user:${user.id}`, { limit: 5, windowSeconds: 86_400 });
   const saved = await submitFeedback(user.id, feedback);
   logEvent(requestMeta(request), { category: "usage", event: "feedback_sent", userId: user.id, details: { kind: feedback.kind } });
   return ok(saved, 201);

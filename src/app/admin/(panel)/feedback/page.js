@@ -77,6 +77,9 @@ async function FeedbackList({ searchParams }) {
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS[item.status].className}`}>{STATUS[item.status].label}</span>
                 <span className="ml-auto text-xs text-zinc-500">{formatDate(item.createdAt)}</span>
               </div>
+              {item.announcementId ? (
+                <p className="text-xs font-medium text-sky-700 dark:text-sky-300">↩ Answer to your question: “{item.questionTitle ?? "a deleted question"}”</p>
+              ) : null}
               <p className="break-words whitespace-pre-wrap text-base">{item.message}</p>
               <p className="text-xs text-zinc-500">
                 From{" "}

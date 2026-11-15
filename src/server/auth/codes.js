@@ -65,12 +65,17 @@ export async function consumeCode(userId, purpose, code) {
   );
   if (!row || row.attempts >= MAX_ATTEMPTS) return false;
 
+  // The attempt is counted before the code is compared, in one statement, so
+  // a burst of parallel guesses can't get more than MAX_ATTEMPTS tries.
+  const counted = await query(
+    "UPDATE email_codes SET attempts = attempts + 1 WHERE id = ? AND attempts < ? AND used_at IS NULL",
+    [row.id, MAX_ATTEMPTS]
+  );
+  if (counted.affectedRows !== 1) return false;
+
   const expected = Buffer.from(row.codeHash, "hex");
   const actual = Buffer.from(hmac(userId, purpose, code), "hex");
-  if (!timingSafeEqual(expected, actual)) {
-    await query("UPDATE email_codes SET attempts = attempts + 1 WHERE id = ?", [row.id]);
-    return false;
-  }
+  if (!timingSafeEqual(expected, actual)) return false;
 
   const claimed = await query("UPDATE email_codes SET used_at = CURRENT_TIMESTAMP WHERE id = ? AND used_at IS NULL", [
     row.id,

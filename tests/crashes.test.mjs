@@ -42,6 +42,20 @@ describe("crash reports", () => {
     assert.equal(row.stack, "at [email]");
   });
 
+  test("sign-in tokens and link tokens are removed before saving", async () => {
+    const name = `ScrubToken${Date.now()}`;
+    const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiJ9.c2lnbmF0dXJlLXBhcnQ";
+    await send(
+      crash(name, {
+        message: `Request failed: Authorization: Bearer ${jwt}`,
+        stack: "fetch https://example.test/api/v1/export/download?token=AbCdEf_123-xyz failed\nrefresh with abc eyJxx.eyJyy.zz",
+      })
+    );
+    const [row] = await sql("SELECT message, stack FROM crash_reports WHERE error_name = ?", [name]);
+    assert.equal(row.message, "Request failed: Authorization: Bearer [token]");
+    assert.equal(row.stack, "fetch https://example.test/api/v1/export/download?token=[token] failed\nrefresh with abc [token]");
+  });
+
   test("a report without the required fields is refused", async () => {
     const { status } = await send({ source: "native", name: "Nope" });
     assert.equal(status, 400);

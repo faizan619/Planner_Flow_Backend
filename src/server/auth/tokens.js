@@ -120,13 +120,15 @@ async function revokeFamily(familyId) {
 }
 
 // Signs the user out everywhere (password reset, deactivation): refresh
-// tokens are revoked, and access tokens issued until now stop working too
+// tokens and unused export links are revoked, and access tokens issued until now stop working too
 // (requireUser checks tokens_valid_after), instead of living out their 15 minutes.
 export async function revokeAllForUser(userId) {
   await query(
     "UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL",
     [userId]
   );
+  // Unused "Export my data" links stop working too: they hand out all the data.
+  await query("UPDATE export_tokens SET used_at = CURRENT_TIMESTAMP WHERE user_id = ? AND used_at IS NULL", [userId]);
   try {
     await query("UPDATE users SET tokens_valid_after = CURRENT_TIMESTAMP WHERE id = ?", [userId]);
   } catch (error) {

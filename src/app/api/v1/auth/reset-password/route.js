@@ -15,6 +15,8 @@ const handlePost = route(async (request) => {
   await rateLimit(`reset:ip:${clientIp(request)}`, { limit: 20, windowSeconds: 3600 });
   const { email, code, password } = await readJson(request, ResetPassword);
   await rateLimit(`reset:email:${email}`, { limit: 10, windowSeconds: 3600 });
+  // And per day, so guessing codes for one account can't go on around the clock.
+  await rateLimit(`reset:email-day:${email}`, { limit: 30, windowSeconds: 24 * 3600 });
 
   const user = await findUserByEmail(email);
   if (!user || user.status !== "active" || !(await consumeCode(user.id, "reset", code))) {

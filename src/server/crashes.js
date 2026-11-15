@@ -19,8 +19,14 @@ export const CrashReport = z.object({
 });
 
 // An error message can quote what it failed on, so anything that looks
-// personal is taken out before it's stored.
-const scrub = (text) => text.replace(/[^\s@"',]+@[^\s@"',]+\.[^\s@"',]+/g, "[email]").replace(/\d{6,}/g, "[number]");
+// personal or secret (sign-in tokens, a link's ?token=) is taken out before it's stored.
+const scrub = (text) =>
+  text
+    .replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+/g, "[token]")
+    .replace(/\b(Bearer\s+)[\w.~+/=-]+/gi, "$1[token]")
+    .replace(/([?&](?:token|refreshToken|accessToken|code)=)[^&\s"']+/gi, "$1[token]")
+    .replace(/[^\s@"',]+@[^\s@"',]+\.[^\s@"',]+/g, "[email]")
+    .replace(/\d{6,}/g, "[number]");
 
 function fingerprint({ source, name, message, stack, versionCode }) {
   const top = stack.split("\n").slice(0, 6).join("\n");

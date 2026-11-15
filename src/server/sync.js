@@ -57,6 +57,7 @@ const ENTITIES = {
   },
   weeklyTasks: {
     table: "weekly_tasks",
+    added: ["missed"],
     key: "id",
     columns: {
       weekStart: "week_start",
@@ -72,7 +73,7 @@ const ENTITIES = {
       weekStart: day,
       title: text(z.string().trim().min(1).max(200)),
       done: z.boolean(),
-      // Marked "didn't make it" mid-week. Older apps don't send it.
+      // Marked "didn't make it" mid-week. Older apps don't send it (see `added`).
       missed: z.boolean().default(false),
       carriedFromId: z.uuid().nullable(),
       carriedToId: z.uuid().nullable(),
@@ -186,6 +187,7 @@ const ENTITIES = {
   // After books: a lesson can point at a book sent in the same sync.
   lessons: {
     table: "lessons",
+    added: ["bookId"],
     key: "id",
     columns: { title: "title_enc", body: "body_enc", lessonDate: "lesson_date", tags: "tags", bookId: "book_id" },
     schema: z.object({
@@ -256,6 +258,7 @@ const ENTITIES = {
   // sent in the same sync.
   transactions: {
     table: "transactions",
+    added: ["subscriptionId"],
     key: "id",
     columns: {
       kind: "kind",
@@ -306,6 +309,9 @@ const ENTITIES = {
 export const ENTITY_NAMES = Object.keys(ENTITIES);
 const MAX_PER_TYPE = 500;
 const PULL_LIMIT = 300;
+// A page of changes stops at about this many bytes (Vercel answers at most
+// 4.5 MB), even before PULL_LIMIT records: long journal entries add up.
+const PULL_BYTES = 3_000_000;
 
 export const SyncRequest = z.object({
   cursor: z.number().int().nonnegative(),
@@ -352,12 +358,17 @@ export async function sync(user, { cursor, changes }) {
 
     for (const [name, entity] of Object.entries(ENTITIES)) {
       const valid = [];
+      // Fields an older app didn't send (entity.added): an edit from it
+      // keeps the stored value instead of resetting it to the default.
+      const absent = new Map();
       for (const raw of changes[name] ?? []) {
         const result = entity.schema.safeParse(raw);
         if (!result.success) {
           rejected.push({ type: name, id: raw?.id ?? null, reason: result.error.issues[0]?.message ?? "invalid" });
           continue;
         }
+        const missing = (entity.added ?? []).filter((field) => raw[field] === undefined);
+        if (missing.length) absent.set(result.data, missing);
         valid.push(result.data);
       }
       if (!valid.length) continue;
@@ -368,14 +379,20 @@ export async function sync(user, { cursor, changes }) {
       const records = valid.filter((record) => !record.rejected);
       if (!records.length) continue;
 
+      const kept = (entity.added ?? []).map((field) => `, ${entity.columns[field]} AS ${field}`).join("");
       const existing = await q(
-        `SELECT ${entity.key} AS id, updated_at AS updatedAt FROM ${entity.table} WHERE user_id = ? AND ${entity.key} IN (?)`,
+        `SELECT ${entity.key} AS id, updated_at AS updatedAt${kept} FROM ${entity.table} WHERE user_id = ? AND ${entity.key} IN (?)`,
         [user.id, records.map((record) => record.id)]
       );
       const known = new Map(existing.map((row) => [String(row.id), Number(row.updatedAt)]));
+      const storedRows = new Map(existing.map((row) => [String(row.id), row]));
 
       const rows = [];
-      for (const record of records) {
+      for (const original of records) {
+        let record = original;
+        const missing = absent.get(original);
+        const storedRow = storedRows.get(original.id);
+        if (missing && storedRow) record = { ...original, ...Object.fromEntries(missing.map((field) => [field, storedRow[field]])) };
         // A clock running ahead mustn't make an edit unbeatable forever.
         const updatedAt = Math.min(record.updatedAt, now + 60_000);
         const current = known.get(record.id);
@@ -420,11 +437,17 @@ export async function sync(user, { cursor, changes }) {
       for (const row of rows) candidates.push({ name, entity, row });
     }
     candidates.sort((a, b) => Number(a.row.seq) - Number(b.row.seq));
-    const hasMore = candidates.length > PULL_LIMIT;
-    const page = candidates.slice(0, PULL_LIMIT);
 
+    // The oldest changes first, until PULL_LIMIT records or PULL_BYTES; the
+    // cursor stops at the last one taken and `hasMore` asks for the rest.
     const pulled = Object.fromEntries(ENTITY_NAMES.map((name) => [name, []]));
-    for (const { name, entity, row } of page) {
+    let taken = 0;
+    let bytes = 0;
+    let lastSeq = null;
+    for (const { name, entity, row } of candidates.slice(0, PULL_LIMIT)) {
+      if (bytes >= PULL_BYTES) break;
+      taken += 1;
+      lastSeq = Number(row.seq);
       const fields = { ...row };
       delete fields.seq;
       let record = {
@@ -448,11 +471,13 @@ export async function sync(user, { cursor, changes }) {
           continue;
         }
       }
+      bytes += Buffer.byteLength(JSON.stringify(record));
       pulled[name].push(record);
     }
+    const hasMore = candidates.length > taken;
 
     return {
-      cursor: hasMore ? Number(page.at(-1).row.seq) : seq,
+      cursor: hasMore ? lastSeq : seq,
       hasMore,
       fullResync: since === 0 && cursor > 0,
       changes: pulled,

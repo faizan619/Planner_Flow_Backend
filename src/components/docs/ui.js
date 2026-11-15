@@ -91,11 +91,3 @@ export function Steps({ children }) {
 export function List({ children }) {
   return <ul className="ml-5 flex list-disc flex-col gap-1.5 leading-relaxed text-zinc-700 dark:text-zinc-300">{children}</ul>;
 }
-
-export function Ext({ href, children }) {
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">
-      {children} ↗
-    </a>
-  );
-}

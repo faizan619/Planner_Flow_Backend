@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
-import { BASE_URL, api, lastCode, sql, startServer, stopServer, uniqueIp, verifiedUser } from "./helpers/server.mjs";
+import { BASE_URL, PASSWORD, api, lastCode, sql, startServer, stopServer, uniqueIp, verifiedUser } from "./helpers/server.mjs";
 
 before(startServer, { timeout: 240_000 });
 after(stopServer);
@@ -131,5 +131,62 @@ describe("routes that need a signed-in user", () => {
   test("the cleanup job refuses a wrong secret", async () => {
     const res = await fetch(`${BASE_URL}/api/cron/cleanup`, { headers: { authorization: "Bearer guess" } });
     assert.equal(res.status, 401);
+  });
+});
+
+describe("guessing passwords and codes", () => {
+  test("DELETE /me allows only 5 password tries per account in 15 minutes", async () => {
+    const user = await verifiedUser("sec-delete-guess");
+    for (let i = 0; i < 5; i += 1) {
+      const res = await api("DELETE", "/api/v1/me", { token: user.accessToken, body: { password: `guess ${i}` }, ip: uniqueIp() });
+      assert.equal(res.status, 401);
+    }
+    const blocked = await api("DELETE", "/api/v1/me", { token: user.accessToken, body: { password: PASSWORD }, ip: uniqueIp() });
+    assert.equal(blocked.status, 429);
+    assert.equal(blocked.body.error.code, "RATE_LIMITED");
+    assert.equal((await api("GET", "/api/v1/me", { token: user.accessToken })).status, 200, "the account is still there");
+  });
+
+  test("parallel wrong guesses can't use more than 5 tries of one code", async () => {
+    const user = await verifiedUser("sec-code-burst");
+    await api("POST", "/api/v1/auth/forgot-password", { body: { email: user.email }, ip: user.ip });
+    const code = await lastCode(user.email);
+    const wrong = code === "000000" ? "111111" : "000000";
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () =>
+        api("POST", "/api/v1/auth/reset-password", { body: { email: user.email, code: wrong, password: "a new long password" }, ip: uniqueIp() })
+      )
+    );
+    assert.ok(results.every((res) => res.status === 400));
+    const [row] = await sql(
+      "SELECT c.attempts FROM email_codes c JOIN users u ON u.id = c.user_id WHERE u.email = ? AND c.purpose = 'reset' ORDER BY c.id DESC LIMIT 1",
+      [user.email]
+    );
+    assert.equal(Number(row.attempts), 5);
+  });
+
+  test("reset-password tries are also capped per email per day", async () => {
+    const user = await verifiedUser("sec-reset-day");
+    await sql("INSERT INTO rate_limits (bucket, window_start, hits) VALUES (?, CURRENT_TIMESTAMP, 30)", [`reset:email-day:${user.email}`]);
+    const res = await api("POST", "/api/v1/auth/reset-password", {
+      body: { email: user.email, code: "123456", password: "a new long password" },
+      ip: uniqueIp(),
+    });
+    assert.equal(res.status, 429);
+    assert.equal(res.body.error.code, "RATE_LIMITED");
+  });
+
+  test("a password reset also cancels export links made before it", async () => {
+    const user = await verifiedUser("sec-reset-export");
+    const link = await api("POST", "/api/v1/export/link", { token: user.accessToken, body: { format: "json" } });
+    assert.equal(link.status, 201);
+
+    await api("POST", "/api/v1/auth/forgot-password", { body: { email: user.email }, ip: user.ip });
+    const reset = await api("POST", "/api/v1/auth/reset-password", {
+      body: { email: user.email, code: await lastCode(user.email), password: "another long password" },
+      ip: user.ip,
+    });
+    assert.equal(reset.status, 200);
+    assert.equal((await fetch(link.body.url)).status, 410);
   });
 });

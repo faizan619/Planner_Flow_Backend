@@ -51,6 +51,17 @@ describe("life lessons", () => {
     assert.equal(back.lessonDate, "2026-10-20");
   });
 
+  test("an edit from an older app (no bookId) keeps the note's book link", async () => {
+    const { accessToken } = await verifiedUser("lesson-book-old-edit");
+    const book = { id: randomUUID(), title: "Deep Work", author: "", genre: "", updatedAt: 1_000, deletedAt: null };
+    const note = lesson({ title: "Focus is a skill", bookId: book.id, updatedAt: 1_000 });
+    await sync(accessToken, 0, { books: [book], lessons: [note] });
+    const { bookId: _dropped, ...fromOldApp } = note;
+    const res = await sync(accessToken, 0, { lessons: [{ ...fromOldApp, title: "Focus is a trainable skill", updatedAt: 2_000 }] });
+    const saved = res.body.changes.lessons.find((item) => item.id === note.id);
+    assert.deepEqual([saved.title, saved.bookId], ["Focus is a trainable skill", book.id]);
+  });
+
   test("a lesson can be a note about a book: new book in the same sync, unknown books refused, old apps fine", async () => {
     const { accessToken } = await verifiedUser("lesson-book");
     const book = { id: randomUUID(), title: "Atomic Habits", author: "James Clear", genre: "Self-help", updatedAt: Date.now(), deletedAt: null };

@@ -14,14 +14,16 @@ export default function Notifications() {
         <Table
           head={["Reminder", "When", "Notes"]}
           rows={[
-            ["Daily check-in", "Every day at the chosen time (default 9 pm)", "“Mark today’s habits”"],
-            ["Reminder notes", "At each note’s time", "Open notes with a future time, soonest 50"],
+            ["Habit reminders", "Every day at the habit’s own time", "Set when adding or editing the habit; a notification or an alarm"],
+            ["Weekly task reminders", "On the chosen weekdays of the task’s week", "Until the task is ticked off; soonest 60"],
+            ["Subscription reminders", "Days before a payment or a free trial ends", "Set per subscription (Money → Subscriptions)"],
+            ["Reminder notes", "At each note’s time", "Open notes with a future time, soonest 50; ring as alarms"],
           ]}
         />
         <List>
           <li>The whole schedule is rebuilt a second after tasks or notes change, and whenever the app opens.</li>
-          <li>Each kind can be switched off, with its own time, in Settings → Reminders (stored on the phone).</li>
-          <li>Android channels: Reminders, Daily check-in, Announcements. Tapping a notification opens the matching screen.</li>
+          <li>Habit, task and subscription reminders are set (or turned off) on the item itself; reminder notes can be switched off in Settings. All of it is stored on the phone.</li>
+          <li>Android channels: Reminders, Announcements, and one alarm channel per alarm tone. Tapping a notification opens the matching screen.</li>
         </List>
       </Section>
 

@@ -1,6 +1,7 @@
 import { query } from "@/server/db";
 import { ApiError, noContent, ok, readJson, route } from "@/server/http";
 import { requireUser } from "@/server/auth/session";
+import { rateLimit } from "@/server/rateLimit";
 import { verifyPassword } from "@/server/auth/password";
 import { publicUser, updateUser } from "@/server/users";
 import { DeleteMe, UpdateMe } from "@/server/validation";
@@ -29,9 +30,12 @@ export const PATCH = route(async (request) => {
 
 // DELETE /api/v1/me — { password }. Permanently deletes the account and,
 // through ON DELETE CASCADE, everything that belongs to it.
+// Password checks are limited per account, so a stolen sign-in can't be used
+// to guess the password (or to keep the server busy hashing guesses).
 export const DELETE = route(async (request) => {
   const user = await requireUser(request);
   const { password } = await readJson(request, DeleteMe);
+  await rateLimit(`delete-me:user:${user.id}`, { limit: 5, windowSeconds: 900 });
   if (!(await verifyPassword(user.passwordHash, password))) {
     throw new ApiError(401, "INVALID_PASSWORD", "Wrong password", { fields: { password: ["Wrong password"] } });
   }

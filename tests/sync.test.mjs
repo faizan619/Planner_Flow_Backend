@@ -158,6 +158,47 @@ describe("sync", () => {
     assert.equal(tooMany.status, 400);
   });
 
+  test("an edit from an older app (no `missed`) keeps the task marked missed", async () => {
+    const { accessToken } = await verifiedUser("sync-missed-old-edit");
+    const task = {
+      id: randomUUID(),
+      weekStart: "2026-11-09",
+      title: "No junk food",
+      done: false,
+      missed: true,
+      carriedFromId: null,
+      carriedToId: null,
+      sortOrder: 0,
+      updatedAt: 1_000,
+      deletedAt: null,
+    };
+    await sync(accessToken, 0, { weeklyTasks: [task] });
+    const { missed: _dropped, ...fromOldApp } = task;
+    const res = await sync(accessToken, 0, { weeklyTasks: [{ ...fromOldApp, title: "No junk food at all", updatedAt: 2_000 }] });
+    const saved = res.body.changes.weeklyTasks.find((item) => item.id === task.id);
+    assert.equal(saved.title, "No junk food at all", "the edit itself is kept");
+    assert.equal(saved.missed, true, "and so is the missed mark");
+  });
+
+  test("a big download comes in pages under the size limit", async () => {
+    const { accessToken } = await verifiedUser("sync-pages");
+    const long = "x".repeat(49_000);
+    const lesson = (index) => ({ id: randomUUID(), title: `Long ${index}`, body: long, lessonDate: "2026-11-01", tags: [], updatedAt: Date.now(), deletedAt: null });
+    for (let batch = 0; batch < 3; batch += 1) {
+      const res = await sync(accessToken, 0, { lessons: Array.from({ length: 25 }, (_, index) => lesson(batch * 25 + index)) });
+      assert.equal(res.status, 200);
+    }
+    // 75 lessons of ~49 KB is ~3.7 MB: more than one page.
+    const first = await sync(accessToken, 0);
+    assert.equal(first.body.hasMore, true);
+    assert.ok(first.body.changes.lessons.length < 75, `${first.body.changes.lessons.length} in the first page`);
+    assert.ok(Buffer.byteLength(JSON.stringify(first.body)) < 4_500_000);
+    const second = await sync(accessToken, first.body.cursor);
+    const ids = new Set([...first.body.changes.lessons, ...second.body.changes.lessons].map((item) => item.id));
+    assert.equal(ids.size, 75, "nothing lost or repeated across pages");
+    assert.equal(second.body.hasMore, false);
+  });
+
   test("a weekly task can be marked missed mid-week; older apps that don't send it get false", async () => {
     const { accessToken } = await verifiedUser("sync-missed");
     const task = (overrides) => ({
